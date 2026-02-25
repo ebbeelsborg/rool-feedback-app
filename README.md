@@ -1,20 +1,21 @@
 # Rool Feedback App
 
-A web app for collecting product feedback about Rool, built on the [Rool SDK](https://docs.rool.dev/). Uses Gemini (via Rool's token quota) as the AI engine to generate summaries of submitted feedback.
+A simple AI-powered feedback app built on the [Rool SDK](https://docs.rool.dev/). Chat-style input for sharing feedback, plus a browsable archive with category filters and search. Uses Gemini (via Rool's token quota) to auto-categorize and summarize each submission.
 
 ## Features
 
-- **Feedback form**: Category (bug, feature, improvement, general), 1–5 star rating, message, optional email
-- **AI-powered summaries**: Each submission is processed by the Rool/Gemini LLM to add a one-sentence summary
-- **Persistent storage**: Feedback is stored as objects in your Rool Space
-- **Theme picker**: Light/dark mode toggle (matches remote-job-aggregator style)
-- **Real-time updates**: New feedback appears immediately via Rool's real-time sync
+- **Chat-style input**: Share feedback in natural language—no forms. Optional email for follow-up.
+- **AI-powered**: Each submission is categorized (bug, feature, improvement, general) and summarized by Rool/Gemini.
+- **Browsable archive**: Filter by category, search by text, expand to read full feedback.
+- **Persistent storage**: Feedback is stored as objects in your Rool Space.
+- **Theme picker**: Light/dark mode toggle.
+- **Real-time updates**: New feedback appears immediately via Rool's real-time sync.
 
 ## Tech Stack
 
 - **Frontend**: React, Vite, Tailwind CSS, shadcn/ui-style components
 - **Backend/Storage**: Rool SDK (Rool Spaces)
-- **AI**: Gemini via Rool token quota (used for feedback summaries)
+- **AI**: Gemini via Rool token quota (categorization + summaries)
 
 ## Getting Started
 
@@ -35,24 +36,13 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173). You'll be prompted to sign in with Rool if not already authenticated. After signing in, you can submit feedback; it will be stored in a Rool Space named "Rool Feedback".
+Open [http://localhost:5173](http://localhost:5173). Sign in with Rool if prompted. Share feedback via the chat input; browse past feedback in the archive below.
 
 ### Build
 
 ```bash
 npm run build
 ```
-
-## Feedback Fields
-
-| Field     | Type   | Required | Description                          |
-|-----------|--------|----------|--------------------------------------|
-| Category  | select | Yes      | Bug, Feature Request, Improvement, General |
-| Rating    | 1–5    | No       | Star rating (defaults to 3)          |
-| Message   | text   | Yes      | Your feedback text                  |
-| Email     | email  | No       | Optional contact for follow-up       |
-
-Each submission triggers an AI-generated one-sentence summary, stored alongside your feedback in the Rool Space.
 
 ## License
 

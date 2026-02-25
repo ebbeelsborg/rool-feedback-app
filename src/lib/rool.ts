@@ -3,13 +3,14 @@ import { RoolClient } from "@rool-dev/sdk";
 export type FeedbackCategory = "bug" | "feature" | "general" | "improvement";
 
 export interface FeedbackData {
+  id?: string;
   type: "feedback";
-  category: FeedbackCategory;
-  rating: number;
+  category?: FeedbackCategory; // AI-generated
+  rating?: number; // legacy, optional
   message: string;
   email?: string;
   createdAt: number;
-  summary?: string; // AI-generated summary
+  summary?: string; // AI-generated
 }
 
 const SPACE_NAME = "Rool Feedback";
@@ -44,7 +45,7 @@ export async function ensureFeedbackSpace() {
 
 export async function submitFeedback(
   space: Awaited<ReturnType<typeof ensureFeedbackSpace>>,
-  data: Omit<FeedbackData, "type" | "createdAt" | "summary">
+  data: { message: string; email?: string }
 ): Promise<{ success: boolean; error?: string }> {
   if (!space) {
     return { success: false, error: "Not authenticated" };
@@ -54,11 +55,11 @@ export async function submitFeedback(
     await space.createObject({
       data: {
         type: "feedback",
-        category: data.category,
-        rating: data.rating,
         message: data.message,
         ...(data.email && { email: data.email }),
         createdAt: Date.now(),
+        category:
+          "{{one of: bug, feature, improvement, general - which best describes this feedback?}}",
         summary: "{{one-sentence summary of this feedback}}",
       },
     });
