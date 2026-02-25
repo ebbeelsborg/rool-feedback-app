@@ -1,9 +1,13 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { type Issue } from "@/lib/rool";
+import { IssueCard } from "@/components/issue-card";
 import { Search } from "lucide-react";
 
 const PAGE_SIZE = 10;
+
+const CARD_CLASS =
+  "group flex min-h-[100px] flex-col rounded-xl border border-border bg-[hsl(var(--pastel-mint))] p-4 text-left shadow-sm transition-all duration-200 hover:shadow-md hover:border-orange-300/50 dark:bg-[hsl(var(--pastel-mint))]/40 dark:hover:border-orange-500/40";
 
 interface SearchPageProps {
   issues: Issue[];
@@ -34,11 +38,8 @@ export function SearchPage({
     (currentPage + 1) * PAGE_SIZE
   );
 
-  const truncate = (s: string, max: number) =>
-    s.length <= max ? s : s.slice(0, max - 1) + "…";
-
   return (
-    <div className="flex h-full flex-col p-6">
+    <div className="flex h-full flex-col bg-[hsl(var(--pastel-peach))] p-6 dark:bg-[hsl(var(--pastel-peach))]/20">
       <form onSubmit={handleSubmit} className="mb-6">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -54,24 +55,12 @@ export function SearchPage({
       <div className="flex-1 overflow-y-auto">
         <div className="grid gap-3 sm:grid-cols-2">
           {paginated.map((issue) => (
-            <button
+            <IssueCard
               key={issue.id ?? issue.createdAt}
-              type="button"
+              issue={issue}
               onClick={() => onSelectIssue(issue)}
-              className="group rounded-xl border border-border bg-card p-4 text-left shadow-sm transition-all duration-200 hover:shadow-md hover:border-border/80"
-            >
-              <p className="font-medium">
-                {truncate(issue.title || "Untitled", 40)}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {new Date(issue.createdAt).toLocaleString()}
-              </p>
-              {issue.category && (
-                <span className="mt-2 inline-block rounded-md bg-orange-50 px-2 py-0.5 text-xs text-orange-700 dark:bg-orange-950/50 dark:text-orange-400">
-                  {issue.category}
-                </span>
-              )}
-            </button>
+              className={CARD_CLASS}
+            />
           ))}
         </div>
 

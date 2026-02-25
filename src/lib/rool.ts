@@ -1,11 +1,14 @@
 import { RoolClient } from "@rool-dev/sdk";
 
+export type IssueStatus = "Open" | "Solved" | "Rejected";
+
 export interface Issue {
   id?: string;
   type: "issue";
   title: string;
   content: string;
   category?: string;
+  status?: IssueStatus;
   createdAt: number;
   dateKey: string;
 }
@@ -56,45 +59,54 @@ export async function chatPrompt(
   return { message };
 }
 
+const MAX_TITLE_LENGTH = 50;
+
 export async function requestSummary(space: NonNullable<Space>): Promise<{
   title: string;
   summary: string;
   category: string;
+  status: IssueStatus;
 }> {
   const { message } = await space.prompt(
-    "Based on our conversation, provide a short title (3-6 words), a 2-3 sentence summary, and a category (1-3 words, e.g. Bug, Feature, UX). Reply in this exact JSON format only, no other text: {\"title\": \"...\", \"summary\": \"...\", \"category\": \"...\"}"
+    "Based on our conversation, provide: a short title (max 50 characters), a 2-3 sentence summary, a category (one word, e.g. Bug, Feature, UX), and a status (exactly one of: Open, Solved, Rejected). New issues are usually Open. Reply in this exact JSON format only, no other text: {\"title\": \"...\", \"summary\": \"...\", \"category\": \"...\", \"status\": \"Open\"}"
   );
   const raw = message.trim();
   const jsonMatch = raw.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
     try {
-      const parsed = JSON.parse(jsonMatch[0]) as { title?: string; summary?: string; category?: string };
+      const parsed = JSON.parse(jsonMatch[0]) as { title?: string; summary?: string; category?: string; status?: string };
+      const title = (parsed.title ?? "Untitled").slice(0, MAX_TITLE_LENGTH);
+      const status = parsed.status === "Solved" || parsed.status === "Rejected" ? parsed.status : "Open";
       return {
-        title: parsed.title ?? "Untitled",
+        title,
         summary: parsed.summary ?? "",
-        category: parsed.category ?? "General",
+        category: (parsed.category ?? "General").split(/\s+/)[0] ?? "General",
+        status,
       };
     } catch {
       /* fall through */
     }
   }
-  return { title: "Untitled", summary: raw, category: "General" };
+  return { title: "Untitled", summary: raw, category: "General", status: "Open" };
 }
 
 export async function createIssue(
   space: NonNullable<Space>,
-  data: { title: string; content: string; category: string }
+  data: { title: string; content: string; category: string; status?: IssueStatus }
 ): Promise<{ success: boolean; error?: string }> {
   const now = Date.now();
   const dateKey = new Date(now).toISOString().slice(0, 10);
+  const title = data.title.slice(0, MAX_TITLE_LENGTH);
+  const status = data.status ?? "Open";
 
   try {
     await space.createObject({
       data: {
         type: "issue",
-        title: data.title,
+        title,
         content: data.content,
         category: data.category,
+        status,
         createdAt: now,
         dateKey,
       },

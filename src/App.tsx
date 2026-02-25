@@ -14,6 +14,7 @@ import { SidebarNav, type Section } from "@/components/sidebar-nav";
 import { IssuesPage } from "@/components/issues-page";
 import { SearchPage } from "@/components/search-page";
 import { Heart, Loader2, MessageSquare, FolderOpen, Search } from "lucide-react";
+import { StatusTag, CategoryTag } from "@/components/issue-card";
 
 function App() {
   const [space, setSpace] = useState<Space>(null);
@@ -107,7 +108,7 @@ function App() {
 
           <main className="flex min-w-0 flex-1 flex-col">
             {selectedIssue ? (
-              <div className="flex flex-col p-6">
+              <div className="flex flex-col bg-[hsl(var(--pastel-sky))] p-6 dark:bg-[hsl(var(--pastel-sky))]/20">
                 <header className="mb-4 border-b border-border pb-3">
                   <h2 className="text-lg font-semibold">Issue</h2>
                 </header>
@@ -121,8 +122,11 @@ function App() {
                 <h1 className="text-xl font-semibold">{selectedIssue.title}</h1>
                 <p className="mt-2 text-sm text-muted-foreground">
                   {new Date(selectedIssue.createdAt).toLocaleString()}
-                  {selectedIssue.category && ` · ${selectedIssue.category}`}
                 </p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  <StatusTag status={selectedIssue.status ?? "Open"} />
+                  <CategoryTag category={selectedIssue.category ?? "General"} />
+                </div>
                 <pre className="mt-4 whitespace-pre-wrap rounded-xl border border-border bg-card p-4 text-sm shadow-sm">
                   {selectedIssue.content}
                 </pre>

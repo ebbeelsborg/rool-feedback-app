@@ -6,7 +6,9 @@ import {
   requestSummary,
   createIssue,
   type Space,
+  type IssueStatus,
 } from "@/lib/rool";
+import { StatusTag, CategoryTag } from "@/components/issue-card";
 import { Loader2, Send, FileCheck, Check } from "lucide-react";
 
 export interface Message {
@@ -24,7 +26,7 @@ export function Chat({ space, onIssueSaved }: ChatProps) {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [summarizing, setSummarizing] = useState(false);
-  const [summary, setSummary] = useState<{ title: string; summary: string; category: string } | null>(null);
+  const [summary, setSummary] = useState<{ title: string; summary: string; category: string; status: IssueStatus } | null>(null);
   const [approving, setApproving] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -68,6 +70,7 @@ export function Chat({ space, onIssueSaved }: ChatProps) {
         title: "Untitled",
         summary: err instanceof Error ? err.message : "Failed to generate summary",
         category: "General",
+        status: "Open",
       });
     } finally {
       setSummarizing(false);
@@ -87,6 +90,7 @@ export function Chat({ space, onIssueSaved }: ChatProps) {
         title: summary.title,
         content: content + `\n\n---\nSummary: ${summary.summary}`,
         category: summary.category,
+        status: summary.status,
       });
       if (result.success) {
         setMessages([]);
@@ -99,7 +103,7 @@ export function Chat({ space, onIssueSaved }: ChatProps) {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col bg-[hsl(var(--pastel-mint))] dark:bg-[hsl(var(--pastel-mint))]/20">
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && !summary && (
           <p className="text-sm text-muted-foreground">
@@ -128,10 +132,13 @@ export function Chat({ space, onIssueSaved }: ChatProps) {
         )}
 
         {summary && (
-          <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+          <div className="rounded-lg border border-border bg-[hsl(var(--pastel-lavender))] p-4 space-y-3 dark:bg-[hsl(var(--pastel-lavender))]/40">
             <p className="text-sm font-medium">Summary for approval</p>
             <p className="text-sm font-medium text-foreground">{summary.title}</p>
-            <span className="inline-block rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">{summary.category}</span>
+            <div className="flex flex-wrap gap-1.5">
+              <StatusTag status={summary.status} />
+              <CategoryTag category={summary.category} />
+            </div>
             <p className="text-sm text-muted-foreground">{summary.summary}</p>
             <div className="flex gap-2">
               <Button

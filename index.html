@@ -2,7 +2,11 @@
 <html lang="en">
   <head>
     <script>
-      (function(){var t=localStorage.getItem("theme")||"light";document.documentElement.classList.add(t)})();
+      (function(){
+        var t=localStorage.getItem("theme")||"light";
+        var effective=t==="system"?(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):t;
+        document.documentElement.classList.add(effective);
+      })();
     </script>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />

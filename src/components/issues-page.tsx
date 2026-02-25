@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { type Issue } from "@/lib/rool";
+import { IssueCard } from "@/components/issue-card";
 
 const PAGE_SIZE = 10;
 
@@ -7,6 +8,9 @@ interface IssuesPageProps {
   issues: Issue[];
   onSelectIssue: (issue: Issue) => void;
 }
+
+const CARD_CLASS =
+  "group flex min-h-[100px] flex-col rounded-xl border border-border bg-[hsl(var(--pastel-lavender))] p-4 text-left shadow-sm transition-all duration-200 hover:shadow-md hover:border-orange-300/50 dark:bg-[hsl(var(--pastel-lavender))]/40 dark:hover:border-orange-500/40";
 
 export function IssuesPage({ issues, onSelectIssue }: IssuesPageProps) {
   const [page, setPage] = useState(0);
@@ -18,32 +22,17 @@ export function IssuesPage({ issues, onSelectIssue }: IssuesPageProps) {
     (currentPage + 1) * PAGE_SIZE
   );
 
-  const truncate = (s: string, max: number) =>
-    s.length <= max ? s : s.slice(0, max - 1) + "…";
-
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col bg-[hsl(var(--pastel-sky))] dark:bg-[hsl(var(--pastel-sky))]/30">
       <div className="flex-1 overflow-y-auto p-6">
         <div className="grid gap-3 sm:grid-cols-2">
           {paginated.map((issue) => (
-            <button
+            <IssueCard
               key={issue.id ?? issue.createdAt}
-              type="button"
+              issue={issue}
               onClick={() => onSelectIssue(issue)}
-              className="group rounded-xl border border-border bg-card p-4 text-left shadow-sm transition-all duration-200 hover:shadow-md hover:border-border/80"
-            >
-              <p className="font-medium">
-                {truncate(issue.title || "Untitled", 40)}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {new Date(issue.createdAt).toLocaleString()}
-              </p>
-              {issue.category && (
-                <span className="mt-2 inline-block rounded-md bg-orange-50 px-2 py-0.5 text-xs text-orange-700 dark:bg-orange-950/50 dark:text-orange-400">
-                  {issue.category}
-                </span>
-              )}
-            </button>
+              className={CARD_CLASS}
+            />
           ))}
         </div>
 
