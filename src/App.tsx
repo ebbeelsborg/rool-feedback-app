@@ -6,8 +6,10 @@ import {
   ensureSpace,
   getIssues,
   searchIssues,
+  updateIssueStatus,
   type Space,
   type Issue,
+  type IssueStatus,
 } from "@/lib/rool";
 import { Chat } from "@/components/chat";
 import { SidebarNav, type Section } from "@/components/sidebar-nav";
@@ -15,6 +17,7 @@ import { IssuesPage } from "@/components/issues-page";
 import { SearchPage } from "@/components/search-page";
 import { Heart, Loader2, MessageSquare, FolderOpen, Search } from "lucide-react";
 import { StatusTag, CategoryTag } from "@/components/issue-card";
+import { IssueStatusMenu } from "@/components/issue-status-menu";
 
 function App() {
   const [space, setSpace] = useState<Space>(null);
@@ -106,26 +109,41 @@ function App() {
             <SidebarNav section={section} onSectionChange={setSection} />
           </aside>
 
-          <main className="flex min-w-0 flex-1 flex-col">
+          <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
+            <div className="mx-4 mb-4 mt-4 flex flex-1 flex-col overflow-hidden rounded-xl border border-border bg-background shadow-sm">
             {selectedIssue ? (
-              <div className="flex flex-col bg-[hsl(var(--pastel-sky))] p-6 dark:bg-[hsl(var(--pastel-sky))]/20">
-                <header className="mb-4 border-b border-border pb-3">
+              <div className="flex flex-col overflow-y-auto p-6">
+                <header className="mb-4 flex items-center justify-between border-b border-border pb-3">
                   <h2 className="text-lg font-semibold">Issue</h2>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedIssue(null)}
+                    className="rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+                  >
+                    ← Back
+                  </button>
                 </header>
-                <button
-                  type="button"
-                  onClick={() => setSelectedIssue(null)}
-                  className="mb-4 self-start rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition-all hover:bg-primary/10 hover:text-primary"
-                >
-                  ← Back
-                </button>
                 <h1 className="text-xl font-semibold">{selectedIssue.title}</h1>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  {new Date(selectedIssue.createdAt).toLocaleString()}
+                  {new Date(selectedIssue.createdAt).toLocaleDateString("en-GB", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })}
                 </p>
-                <div className="mt-2 flex flex-wrap gap-1.5">
+                <div className="mt-2 flex flex-wrap items-center gap-2">
                   <StatusTag status={selectedIssue.status ?? "Open"} />
                   <CategoryTag category={selectedIssue.category ?? "General"} />
+                  {selectedIssue.id && space && (
+                    <IssueStatusMenu
+                      issue={selectedIssue}
+                      onUpdate={async (newStatus) => {
+                        await updateIssueStatus(space, selectedIssue.id!, newStatus);
+                        setSelectedIssue({ ...selectedIssue, status: newStatus });
+                        refreshIssues();
+                      }}
+                    />
+                  )}
                 </div>
                 <pre className="mt-4 whitespace-pre-wrap rounded-xl border border-border bg-card p-4 text-sm shadow-sm">
                   {selectedIssue.content}
@@ -147,9 +165,17 @@ function App() {
                   {section === "issues" && (
                     <IssuesPage
                       issues={issues}
-                      onSelectIssue={(i) => {
-                        setSelectedIssue(i);
-                      }}
+                      onSelectIssue={(i) => setSelectedIssue(i)}
+                      onStatusChange={
+                        space
+                          ? async (issue: Issue, newStatus: IssueStatus) => {
+                              if (issue.id) {
+                                await updateIssueStatus(space, issue.id, newStatus);
+                                refreshIssues();
+                              }
+                            }
+                          : undefined
+                      }
                     />
                   )}
                   {section === "search" && (
@@ -158,11 +184,23 @@ function App() {
                       searchQuery={searchQuery}
                       onSearch={handleSearch}
                       onSelectIssue={(i) => setSelectedIssue(i)}
+                      onStatusChange={
+                        space
+                          ? async (issue: Issue, newStatus: IssueStatus) => {
+                              if (issue.id) {
+                                await updateIssueStatus(space, issue.id, newStatus);
+                                refreshIssues();
+                                handleSearch(searchQuery);
+                              }
+                            }
+                          : undefined
+                      }
                     />
                   )}
                 </div>
               </>
             )}
+            </div>
           </main>
         </div>
       )}

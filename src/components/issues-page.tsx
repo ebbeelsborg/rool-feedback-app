@@ -7,12 +7,10 @@ const PAGE_SIZE = 10;
 interface IssuesPageProps {
   issues: Issue[];
   onSelectIssue: (issue: Issue) => void;
+  onStatusChange?: (issue: Issue, newStatus: import("@/lib/rool").IssueStatus) => void;
 }
 
-const CARD_CLASS =
-  "group flex min-h-[100px] flex-col rounded-xl border border-border bg-[hsl(var(--pastel-lavender))] p-4 text-left shadow-sm transition-all duration-200 hover:shadow-md hover:border-orange-300/50 dark:bg-[hsl(var(--pastel-lavender))]/40 dark:hover:border-orange-500/40";
-
-export function IssuesPage({ issues, onSelectIssue }: IssuesPageProps) {
+export function IssuesPage({ issues, onSelectIssue, onStatusChange }: IssuesPageProps) {
   const [page, setPage] = useState(0);
 
   const totalPages = Math.ceil(issues.length / PAGE_SIZE) || 1;
@@ -23,15 +21,15 @@ export function IssuesPage({ issues, onSelectIssue }: IssuesPageProps) {
   );
 
   return (
-    <div className="flex h-full flex-col bg-[hsl(var(--pastel-sky))] dark:bg-[hsl(var(--pastel-sky))]/30">
+    <div className="flex h-full flex-col">
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2" style={{ maxWidth: "min(100%, 720px)" }}>
           {paginated.map((issue) => (
             <IssueCard
               key={issue.id ?? issue.createdAt}
               issue={issue}
               onClick={() => onSelectIssue(issue)}
-              className={CARD_CLASS}
+              onStatusChange={onStatusChange}
             />
           ))}
         </div>

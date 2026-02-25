@@ -6,14 +6,12 @@ import { Search } from "lucide-react";
 
 const PAGE_SIZE = 10;
 
-const CARD_CLASS =
-  "group flex min-h-[100px] flex-col rounded-xl border border-border bg-[hsl(var(--pastel-mint))] p-4 text-left shadow-sm transition-all duration-200 hover:shadow-md hover:border-orange-300/50 dark:bg-[hsl(var(--pastel-mint))]/40 dark:hover:border-orange-500/40";
-
 interface SearchPageProps {
   issues: Issue[];
   searchQuery: string;
   onSearch: (query: string) => void;
   onSelectIssue: (issue: Issue) => void;
+  onStatusChange?: (issue: Issue, newStatus: import("@/lib/rool").IssueStatus) => void;
 }
 
 export function SearchPage({
@@ -21,6 +19,7 @@ export function SearchPage({
   searchQuery,
   onSearch,
   onSelectIssue,
+  onStatusChange,
 }: SearchPageProps) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
@@ -39,7 +38,7 @@ export function SearchPage({
   );
 
   return (
-    <div className="flex h-full flex-col bg-[hsl(var(--pastel-peach))] p-6 dark:bg-[hsl(var(--pastel-peach))]/20">
+    <div className="flex h-full flex-col p-6">
       <form onSubmit={handleSubmit} className="mb-6">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -53,13 +52,13 @@ export function SearchPage({
       </form>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2" style={{ maxWidth: "min(100%, 720px)" }}>
           {paginated.map((issue) => (
             <IssueCard
               key={issue.id ?? issue.createdAt}
               issue={issue}
               onClick={() => onSelectIssue(issue)}
-              className={CARD_CLASS}
+              onStatusChange={onStatusChange}
             />
           ))}
         </div>

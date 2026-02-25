@@ -135,6 +135,22 @@ export async function getIssues(space: NonNullable<Space>): Promise<Issue[]> {
   }
 }
 
+export async function updateIssueStatus(
+  space: NonNullable<Space>,
+  objectId: string,
+  status: IssueStatus
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await space.updateObject(objectId, { data: { status } });
+    return { success: true };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to update",
+    };
+  }
+}
+
 export async function searchIssues(
   space: NonNullable<Space>,
   query: string

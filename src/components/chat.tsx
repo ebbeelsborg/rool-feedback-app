@@ -103,14 +103,45 @@ export function Chat({ space, onIssueSaved }: ChatProps) {
   }
 
   return (
-    <div className="flex h-full flex-col bg-[hsl(var(--pastel-mint))] dark:bg-[hsl(var(--pastel-mint))]/20">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 && !summary && (
-          <p className="text-sm text-muted-foreground">
-            Chat about your issue, then summarize and save.
-          </p>
-        )}
+    <div className="flex h-full flex-col">
+      <div className="shrink-0 p-4">
+        <p className="mb-3 text-sm text-muted-foreground">
+          Chat about your issue, then summarize and save.
+        </p>
+        <div className="flex gap-2">
+          <form onSubmit={handleSend} className="flex-1 flex flex-col gap-2">
+            <Textarea
+              placeholder="Type your message..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend(e);
+                }
+              }}
+              rows={10}
+              className="min-h-[200px] resize-y border-2 border-orange-500 focus-visible:border-orange-500 focus-visible:ring-orange-500"
+              disabled={sending || summarizing}
+            />
+            <div className="flex gap-2">
+              <Button type="submit" disabled={!input.trim() || sending || summarizing}>
+                {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleSummarize}
+                disabled={messages.length === 0 || sending || summarizing}
+              >
+                {summarizing ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileCheck className="h-4 w-4" />}
+                Summarize
+              </Button>
+            </div>
+          </form>
+        </div>
+      </div>
 
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((m, i) => (
           <div
             key={i}
@@ -132,7 +163,7 @@ export function Chat({ space, onIssueSaved }: ChatProps) {
         )}
 
         {summary && (
-          <div className="rounded-lg border border-border bg-[hsl(var(--pastel-lavender))] p-4 space-y-3 dark:bg-[hsl(var(--pastel-lavender))]/40">
+          <div className="rounded-lg border border-border bg-card p-4 space-y-3">
             <p className="text-sm font-medium">Summary for approval</p>
             <p className="text-sm font-medium text-foreground">{summary.title}</p>
             <div className="flex flex-wrap gap-1.5">
@@ -161,38 +192,6 @@ export function Chat({ space, onIssueSaved }: ChatProps) {
         )}
 
         <div ref={scrollRef} />
-      </div>
-
-      <div className="border-t border-border p-4">
-        <div className="flex gap-2">
-          <form onSubmit={handleSend} className="flex-1 flex gap-2">
-            <Textarea
-              placeholder="Type your message..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend(e);
-                }
-              }}
-              rows={2}
-              className="min-h-[60px] resize-none border-2 border-orange-500 focus-visible:border-orange-500 focus-visible:ring-orange-500"
-              disabled={sending || summarizing}
-            />
-            <Button type="submit" disabled={!input.trim() || sending || summarizing}>
-              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            </Button>
-          </form>
-          <Button
-            variant="outline"
-            onClick={handleSummarize}
-            disabled={messages.length === 0 || sending || summarizing}
-          >
-            {summarizing ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileCheck className="h-4 w-4" />}
-            Summarize
-          </Button>
-        </div>
       </div>
     </div>
   );
