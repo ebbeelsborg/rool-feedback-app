@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { ThemeProvider } from "@/lib/theme-provider";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ensureSpace,
   getIssues,
   searchIssues,
   updateIssueStatus,
+  updateIssueCategory,
   type Space,
   type Issue,
   type IssueStatus,
@@ -99,12 +99,11 @@ function App() {
         </div>
       ) : (
         <div className="flex h-screen">
-          <aside className="flex w-64 shrink-0 flex-col border-r border-border bg-muted/30">
-            <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
+          <aside className="my-4 ml-4 flex w-64 shrink-0 flex-col overflow-hidden rounded-xl border border-border bg-muted/30">
+            <div className="border-b border-border px-4 py-3">
               <h1 className="flex items-center gap-1.5 truncate text-base font-semibold">
                 Rool <Heart className="h-4 w-4 fill-orange-500 text-orange-500" /> Feedback
               </h1>
-              <ThemeToggle />
             </div>
             <SidebarNav section={section} onSectionChange={setSection} />
           </aside>
@@ -137,9 +136,14 @@ function App() {
                   {selectedIssue.id && space && (
                     <IssueStatusMenu
                       issue={selectedIssue}
-                      onUpdate={async (newStatus) => {
+                      onStatusUpdate={async (newStatus) => {
                         await updateIssueStatus(space, selectedIssue.id!, newStatus);
                         setSelectedIssue({ ...selectedIssue, status: newStatus });
+                        refreshIssues();
+                      }}
+                      onCategoryUpdate={async (newCategory) => {
+                        await updateIssueCategory(space, selectedIssue.id!, newCategory);
+                        setSelectedIssue({ ...selectedIssue, category: newCategory });
                         refreshIssues();
                       }}
                     />
@@ -176,6 +180,16 @@ function App() {
                             }
                           : undefined
                       }
+                      onCategoryChange={
+                        space
+                          ? async (issue: Issue, newCategory: string) => {
+                              if (issue.id) {
+                                await updateIssueCategory(space, issue.id, newCategory);
+                                refreshIssues();
+                              }
+                            }
+                          : undefined
+                      }
                     />
                   )}
                   {section === "search" && (
@@ -189,6 +203,17 @@ function App() {
                           ? async (issue: Issue, newStatus: IssueStatus) => {
                               if (issue.id) {
                                 await updateIssueStatus(space, issue.id, newStatus);
+                                refreshIssues();
+                                handleSearch(searchQuery);
+                              }
+                            }
+                          : undefined
+                      }
+                      onCategoryChange={
+                        space
+                          ? async (issue: Issue, newCategory: string) => {
+                              if (issue.id) {
+                                await updateIssueCategory(space, issue.id, newCategory);
                                 refreshIssues();
                                 handleSearch(searchQuery);
                               }

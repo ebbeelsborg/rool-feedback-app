@@ -12,6 +12,7 @@ interface SearchPageProps {
   onSearch: (query: string) => void;
   onSelectIssue: (issue: Issue) => void;
   onStatusChange?: (issue: Issue, newStatus: import("@/lib/rool").IssueStatus) => void;
+  onCategoryChange?: (issue: Issue, newCategory: string) => void;
 }
 
 export function SearchPage({
@@ -20,6 +21,7 @@ export function SearchPage({
   onSearch,
   onSelectIssue,
   onStatusChange,
+  onCategoryChange,
 }: SearchPageProps) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
@@ -59,6 +61,7 @@ export function SearchPage({
               issue={issue}
               onClick={() => onSelectIssue(issue)}
               onStatusChange={onStatusChange}
+              onCategoryChange={onCategoryChange}
             />
           ))}
         </div>

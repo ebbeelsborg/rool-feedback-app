@@ -8,9 +8,10 @@ interface IssuesPageProps {
   issues: Issue[];
   onSelectIssue: (issue: Issue) => void;
   onStatusChange?: (issue: Issue, newStatus: import("@/lib/rool").IssueStatus) => void;
+  onCategoryChange?: (issue: Issue, newCategory: string) => void;
 }
 
-export function IssuesPage({ issues, onSelectIssue, onStatusChange }: IssuesPageProps) {
+export function IssuesPage({ issues, onSelectIssue, onStatusChange, onCategoryChange }: IssuesPageProps) {
   const [page, setPage] = useState(0);
 
   const totalPages = Math.ceil(issues.length / PAGE_SIZE) || 1;
@@ -30,6 +31,7 @@ export function IssuesPage({ issues, onSelectIssue, onStatusChange }: IssuesPage
               issue={issue}
               onClick={() => onSelectIssue(issue)}
               onStatusChange={onStatusChange}
+              onCategoryChange={onCategoryChange}
             />
           ))}
         </div>

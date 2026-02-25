@@ -151,6 +151,23 @@ export async function updateIssueStatus(
   }
 }
 
+export async function updateIssueCategory(
+  space: NonNullable<Space>,
+  objectId: string,
+  category: string
+): Promise<{ success: boolean; error?: string }> {
+  const trimmed = category.trim().split(/\s+/)[0] ?? "General";
+  try {
+    await space.updateObject(objectId, { data: { category: trimmed } });
+    return { success: true };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to update",
+    };
+  }
+}
+
 export async function searchIssues(
   space: NonNullable<Space>,
   query: string

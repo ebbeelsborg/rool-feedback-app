@@ -36,10 +36,11 @@ interface IssueCardProps {
   issue: Issue;
   onClick: () => void;
   onStatusChange?: (issue: Issue, newStatus: IssueStatus) => void;
+  onCategoryChange?: (issue: Issue, newCategory: string) => void;
   className?: string;
 }
 
-export function IssueCard({ issue, onClick, onStatusChange, className }: IssueCardProps) {
+export function IssueCard({ issue, onClick, onStatusChange, onCategoryChange, className }: IssueCardProps) {
   const status = issue.status ?? "Open";
   const category = issue.category ?? "General";
   const [menuOpen, setMenuOpen] = useState(false);
@@ -55,7 +56,7 @@ export function IssueCard({ issue, onClick, onStatusChange, className }: IssueCa
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const canChangeStatus = issue.id && onStatusChange;
+  const canChange = issue.id && (onStatusChange || onCategoryChange);
 
   return (
     <div className={`relative ${className}`}>
@@ -75,7 +76,7 @@ export function IssueCard({ issue, onClick, onStatusChange, className }: IssueCa
           <CategoryTag category={category} />
         </div>
       </button>
-      {canChangeStatus && (
+      {canChange && (
         <div className="absolute right-2 top-2" ref={menuRef}>
           <button
             type="button"
@@ -84,13 +85,13 @@ export function IssueCard({ issue, onClick, onStatusChange, className }: IssueCa
               setMenuOpen((o) => !o);
             }}
             className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-            aria-label="Change status"
+            aria-label="Issue menu"
           >
             <MoreVertical className="h-4 w-4" />
           </button>
           {menuOpen && (
-            <div className="absolute right-0 top-full z-50 mt-1 min-w-[100px] rounded-lg border border-border bg-popover py-1 shadow-md">
-              {STATUSES.map((s) => (
+            <div className="absolute right-0 bottom-full z-50 mb-1 min-w-[120px] rounded-lg border border-border bg-popover py-1 shadow-lg">
+              {onStatusChange && STATUSES.map((s) => (
                 <button
                   key={s}
                   type="button"
@@ -106,6 +107,25 @@ export function IssueCard({ issue, onClick, onStatusChange, className }: IssueCa
                   {s}
                 </button>
               ))}
+              {onCategoryChange && (
+                <>
+                  <div className="my-1 border-t border-border" />
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const newCat = window.prompt("New category (one word):", category);
+                      if (newCat != null && newCat.trim()) {
+                        onCategoryChange(issue, newCat.trim());
+                        setMenuOpen(false);
+                      }
+                    }}
+                    className="flex w-full px-3 py-2 text-left text-sm hover:bg-muted"
+                  >
+                    Recategorize…
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>
