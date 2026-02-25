@@ -15,7 +15,7 @@ export function SidebarNav({ section, onSectionChange }: SidebarNavProps) {
   ];
 
   return (
-    <nav className="flex flex-col gap-1 p-2">
+    <nav className="flex flex-col gap-1 p-3">
       {items.map(({ id, label, icon }) => {
         const isSelected = section === id;
         return (
@@ -23,10 +23,10 @@ export function SidebarNav({ section, onSectionChange }: SidebarNavProps) {
             key={id}
             type="button"
             onClick={() => onSectionChange(id)}
-            className={`flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-all duration-200 ${
+            className={`flex w-full items-center gap-2 rounded-lg border-l-4 px-3 py-2.5 text-left text-sm font-medium transition-all duration-200 ${
               isSelected
-                ? "bg-primary/20 text-primary shadow-sm ring-1 ring-primary/30"
-                : "text-muted-foreground hover:bg-primary/10 hover:text-primary/80"
+                ? "border-l-orange-500 bg-orange-50 text-orange-700 dark:border-l-orange-500 dark:bg-orange-950/40 dark:text-orange-400"
+                : "border-l-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground"
             }`}
           >
             {icon}

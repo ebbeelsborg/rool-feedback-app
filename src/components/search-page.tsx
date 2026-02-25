@@ -58,7 +58,7 @@ export function SearchPage({
               key={issue.id ?? issue.createdAt}
               type="button"
               onClick={() => onSelectIssue(issue)}
-              className="group rounded-xl border border-border bg-card p-4 text-left transition-all duration-200 hover:scale-[1.02] hover:shadow-md hover:shadow-primary/10 hover:border-primary/30"
+              className="group rounded-xl border border-border bg-card p-4 text-left shadow-sm transition-all duration-200 hover:shadow-md hover:border-border/80"
             >
               <p className="font-medium">
                 {truncate(issue.title || "Untitled", 40)}
@@ -67,7 +67,7 @@ export function SearchPage({
                 {new Date(issue.createdAt).toLocaleString()}
               </p>
               {issue.category && (
-                <span className="mt-2 inline-block rounded-lg bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                <span className="mt-2 inline-block rounded-md bg-orange-50 px-2 py-0.5 text-xs text-orange-700 dark:bg-orange-950/50 dark:text-orange-400">
                   {issue.category}
                 </span>
               )}

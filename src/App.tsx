@@ -13,7 +13,7 @@ import { Chat } from "@/components/chat";
 import { SidebarNav, type Section } from "@/components/sidebar-nav";
 import { IssuesPage } from "@/components/issues-page";
 import { SearchPage } from "@/components/search-page";
-import { Loader2 } from "lucide-react";
+import { Heart, Loader2, MessageSquare, FolderOpen, Search } from "lucide-react";
 
 function App() {
   const [space, setSpace] = useState<Space>(null);
@@ -95,9 +95,11 @@ function App() {
         </div>
       ) : (
         <div className="flex h-screen">
-          <aside className="flex w-48 shrink-0 flex-col border-r border-border bg-muted/20">
-            <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2.5">
-              <h1 className="truncate text-base font-semibold">Rool <span className="text-orange-500">❤️</span> Feedback</h1>
+          <aside className="flex w-64 shrink-0 flex-col border-r border-border bg-muted/30">
+            <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
+              <h1 className="flex items-center gap-1.5 truncate text-base font-semibold">
+                Rool <Heart className="h-4 w-4 fill-orange-500 text-orange-500" /> Feedback
+              </h1>
               <ThemeToggle />
             </div>
             <SidebarNav section={section} onSectionChange={setSection} />
@@ -127,11 +129,11 @@ function App() {
               </div>
             ) : (
               <>
-                <header className="shrink-0 border-b border-border px-4 py-3">
-                  <h2 className="text-lg font-semibold">
-                    {section === "chat" && "Chat"}
-                    {section === "issues" && "Issues"}
-                    {section === "search" && "Search"}
+                <header className="shrink-0 border-b border-border bg-background/95 px-6 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                  <h2 className="flex items-center gap-2 text-lg font-semibold">
+                    {section === "chat" && <><MessageSquare className="h-5 w-5 text-muted-foreground" /> Chat</>}
+                    {section === "issues" && <><FolderOpen className="h-5 w-5 text-muted-foreground" /> Issues</>}
+                    {section === "search" && <><Search className="h-5 w-5 text-muted-foreground" /> Search</>}
                   </h2>
                 </header>
                 <div className="flex-1 overflow-hidden">
