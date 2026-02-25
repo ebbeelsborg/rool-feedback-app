@@ -91,7 +91,7 @@
 
 @layer components {
   .menu-dropdown {
-    @apply absolute z-50 min-w-[160px] rounded-xl border border-border bg-popover p-1.5 shadow-xl;
+    @apply absolute z-50 min-w-[160px] rounded-xl border border-border bg-white p-1.5 shadow-xl dark:bg-gray-900;
     animation: menu-in 0.15s ease-out;
   }
   .menu-dropdown button {

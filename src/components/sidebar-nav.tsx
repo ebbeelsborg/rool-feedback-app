@@ -1,5 +1,4 @@
 import { MessageSquare, FolderOpen, Search } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 export type Section = "chat" | "issues" | "search";
 
@@ -37,9 +36,6 @@ export function SidebarNav({ section, onSectionChange }: SidebarNavProps) {
           );
         })}
       </nav>
-      <div className="border-t border-border p-3">
-        <ThemeToggle />
-      </div>
     </div>
   );
 }

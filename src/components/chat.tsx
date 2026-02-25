@@ -29,6 +29,7 @@ export function Chat({ space, onIssueSaved }: ChatProps) {
   const [summary, setSummary] = useState<{ title: string; summary: string; category: string; status: IssueStatus } | null>(null);
   const [approving, setApproving] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -184,7 +185,7 @@ export function Chat({ space, onIssueSaved }: ChatProps) {
       </div>
 
       <div className="shrink-0 border-t border-border bg-card/50 p-4">
-        <form onSubmit={handleSend} className="flex flex-col gap-3">
+        <form ref={formRef} onSubmit={handleSend} className="flex flex-col gap-3">
           <Textarea
             placeholder="Describe your issue..."
             value={input}
@@ -192,11 +193,13 @@ export function Chat({ space, onIssueSaved }: ChatProps) {
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                handleSend(e);
+                if (input.trim() && !sending && !summarizing) {
+                  formRef.current?.requestSubmit();
+                }
               }
             }}
             rows={3}
-            className="min-h-[80px] resize-none rounded-xl border-border bg-background focus-visible:border-primary focus-visible:ring-primary/20"
+            className="min-h-[80px] resize-none rounded-xl border-2 border-orange-500 bg-background focus-visible:border-orange-500 focus-visible:ring-orange-500/20"
             disabled={sending || summarizing}
           />
           <div className="flex gap-2">

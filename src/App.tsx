@@ -107,7 +107,7 @@ function App() {
           <aside className="my-3 ml-3 flex w-60 shrink-0 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
             <div className="border-b border-border px-4 py-3.5">
               <h1 className="flex items-center gap-1.5 truncate text-sm font-bold tracking-tight">
-                Rool <Heart className="h-3.5 w-3.5 fill-primary text-primary" /> Feedback
+                Rool <Heart className="h-3.5 w-3.5 fill-orange-500 text-orange-500" /> Feedback
               </h1>
             </div>
             <SidebarNav section={section} onSectionChange={setSection} />

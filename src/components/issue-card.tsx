@@ -30,7 +30,7 @@ export function StatusTag({ status }: { status: IssueStatus }) {
 
 export function CategoryTag({ category }: { category: string }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-2.5 py-0.5 text-xs font-medium text-orange-700 dark:border-orange-800/40 dark:bg-orange-950/40 dark:text-orange-400">
+    <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
       <Tag className="h-3 w-3" />
       {category}
     </span>
@@ -71,7 +71,7 @@ export function IssueCard({ issue, onClick, onStatusChange, onCategoryChange, cl
       <button
         type="button"
         onClick={onClick}
-        className="flex h-full w-full flex-col rounded-xl border border-border bg-card p-4 text-left shadow-sm transition-all duration-200 hover:shadow-lg hover:border-primary/20 hover:-translate-y-0.5"
+        className="flex h-full w-full flex-col rounded-xl border-2 border-orange-500 bg-white p-4 text-left shadow-sm transition-shadow duration-200 hover:shadow-lg dark:border-orange-500 dark:bg-gray-900"
       >
         <p className="line-clamp-2 min-h-[2.5rem] max-w-[28ch] font-semibold leading-snug">
           {truncate(issue.title || "Untitled", 50)}
