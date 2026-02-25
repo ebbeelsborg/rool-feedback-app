@@ -26,11 +26,11 @@ export function ThemeToggle() {
 
   return (
     <div className="relative" ref={ref}>
-      <Button variant="ghost" size="icon" onClick={() => setOpen((o) => !o)} aria-label="Theme">
+      <Button variant="ghost" size="icon" onClick={() => setOpen((o) => !o)} aria-label="Theme" className="rounded-xl">
         {currentIcon}
       </Button>
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 min-w-[120px] rounded-lg border border-border bg-popover py-1 shadow-md">
+        <div className="menu-dropdown left-0 bottom-full mb-1.5">
           {OPTIONS.map((opt) => (
             <button
               key={opt.value}
@@ -39,9 +39,7 @@ export function ThemeToggle() {
                 setTheme(opt.value);
                 setOpen(false);
               }}
-              className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted ${
-                theme === opt.value ? "bg-muted font-medium" : ""
-              }`}
+              className={theme === opt.value ? "font-medium bg-muted" : ""}
             >
               {opt.icon}
               {opt.label}

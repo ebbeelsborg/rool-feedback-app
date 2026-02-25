@@ -9,7 +9,7 @@ import {
   type IssueStatus,
 } from "@/lib/rool";
 import { StatusTag, CategoryTag } from "@/components/issue-card";
-import { Loader2, Send, FileCheck, Check } from "lucide-react";
+import { Loader2, Send, FileCheck, Check, Bot, User } from "lucide-react";
 
 export interface Message {
   role: "user" | "assistant";
@@ -104,94 +104,117 @@ export function Chat({ space, onIssueSaved }: ChatProps) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="shrink-0 p-4">
-        <p className="mb-3 text-sm text-muted-foreground">
-          Chat about your issue, then summarize and save.
-        </p>
-        <div className="flex gap-2">
-          <form onSubmit={handleSend} className="flex-1 flex flex-col gap-2">
-            <Textarea
-              placeholder="Type your message..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend(e);
-                }
-              }}
-              rows={10}
-              className="min-h-[200px] resize-y border-2 border-orange-500 focus-visible:border-orange-500 focus-visible:ring-orange-500"
-              disabled={sending || summarizing}
-            />
-            <div className="flex gap-2">
-              <Button type="submit" disabled={!input.trim() || sending || summarizing}>
-                {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleSummarize}
-                disabled={messages.length === 0 || sending || summarizing}
-              >
-                {summarizing ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileCheck className="h-4 w-4" />}
-                Summarize
-              </Button>
+      <div className="flex-1 overflow-y-auto p-5">
+        {messages.length === 0 && !summary && (
+          <div className="flex h-full flex-col items-center justify-center text-center">
+            <div className="rounded-2xl bg-primary/10 p-4">
+              <Bot className="h-8 w-8 text-primary" />
             </div>
-          </form>
+            <p className="mt-4 text-sm font-medium text-foreground">Describe your issue</p>
+            <p className="mt-1.5 max-w-xs text-xs text-muted-foreground leading-relaxed">
+              Chat about your issue, then click Summarize when ready to save it.
+            </p>
+          </div>
+        )}
+
+        <div className="space-y-3">
+          {messages.map((m, i) => (
+            <div
+              key={i}
+              className={`flex items-start gap-2.5 ${m.role === "user" ? "flex-row-reverse" : ""}`}
+            >
+              <div className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
+                m.role === "user"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
+              }`}>
+                {m.role === "user" ? <User className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
+              </div>
+              <div className={`chat-bubble ${
+                m.role === "user" ? "chat-bubble-user" : "chat-bubble-assistant"
+              }`}>
+                <div className="whitespace-pre-wrap">{m.content}</div>
+              </div>
+            </div>
+          ))}
+
+          {sending && (
+            <div className="flex items-start gap-2.5">
+              <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                <Bot className="h-3.5 w-3.5" />
+              </div>
+              <div className="chat-bubble chat-bubble-assistant flex items-center gap-2">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Thinking...
+              </div>
+            </div>
+          )}
+
+          {summary && (
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary">Summary for approval</p>
+              <p className="text-base font-semibold text-foreground">{summary.title}</p>
+              <div className="flex flex-wrap gap-1.5">
+                <StatusTag status={summary.status} />
+                <CategoryTag category={summary.category} />
+              </div>
+              <p className="text-sm leading-relaxed text-muted-foreground">{summary.summary}</p>
+              <div className="flex gap-2 pt-1">
+                <Button
+                  size="sm"
+                  onClick={handleApprove}
+                  disabled={approving}
+                >
+                  {approving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                  Approve & Save
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setSummary(null)}
+                >
+                  Edit more
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((m, i) => (
-          <div
-            key={i}
-            className={`text-sm ${
-              m.role === "user"
-                ? "text-orange-600 dark:text-orange-400"
-                : "text-gray-700 dark:text-gray-300"
-            }`}
-          >
-            <div className="whitespace-pre-wrap">{m.content}</div>
-          </div>
-        ))}
-
-        {sending && (
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Thinking...
-          </div>
-        )}
-
-        {summary && (
-          <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-            <p className="text-sm font-medium">Summary for approval</p>
-            <p className="text-sm font-medium text-foreground">{summary.title}</p>
-            <div className="flex flex-wrap gap-1.5">
-              <StatusTag status={summary.status} />
-              <CategoryTag category={summary.category} />
-            </div>
-            <p className="text-sm text-muted-foreground">{summary.summary}</p>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                onClick={handleApprove}
-                disabled={approving}
-              >
-                {approving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                Approve & Save
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setSummary(null)}
-              >
-                Edit more
-              </Button>
-            </div>
-          </div>
-        )}
 
         <div ref={scrollRef} />
+      </div>
+
+      <div className="shrink-0 border-t border-border bg-card/50 p-4">
+        <form onSubmit={handleSend} className="flex flex-col gap-3">
+          <Textarea
+            placeholder="Describe your issue..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSend(e);
+              }
+            }}
+            rows={3}
+            className="min-h-[80px] resize-none rounded-xl border-border bg-background focus-visible:border-primary focus-visible:ring-primary/20"
+            disabled={sending || summarizing}
+          />
+          <div className="flex gap-2">
+            <Button type="submit" disabled={!input.trim() || sending || summarizing} className="rounded-xl">
+              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              Send
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleSummarize}
+              disabled={messages.length === 0 || sending || summarizing}
+              className="rounded-xl"
+            >
+              {summarizing ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileCheck className="h-4 w-4" />}
+              Summarize
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
   );

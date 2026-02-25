@@ -6,59 +6,61 @@
   --button-outline: rgba(0, 0, 0, 0.08);
   --elevate-1: rgba(0, 0, 0, 0.02);
   --elevate-2: rgba(0, 0, 0, 0.06);
-  --background: 0 0% 98%;
-  --foreground: 220 15% 20%;
-  --border: 220 13% 91%;
+  --background: 30 25% 97%;
+  --foreground: 220 15% 15%;
+  --border: 30 10% 88%;
   --card: 0 0% 100%;
-  --card-foreground: 220 15% 20%;
-  --card-border: 220 13% 94%;
-  --primary: 217 91% 45%;
+  --card-foreground: 220 15% 15%;
+  --card-border: 30 10% 90%;
+  --primary: 24 90% 50%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 220 14% 96%;
-  --secondary-foreground: 220 15% 25%;
-  --muted: 220 14% 96%;
+  --secondary: 30 15% 94%;
+  --secondary-foreground: 220 15% 20%;
+  --muted: 30 12% 94%;
   --muted-foreground: 220 9% 46%;
   --accent: 24 95% 53%;
   --accent-foreground: 0 0% 100%;
   --destructive: 0 70% 55%;
   --destructive-foreground: 0 0% 100%;
-  --input: 220 13% 91%;
-  --ring: 217 91% 45%;
+  --input: 30 10% 88%;
+  --ring: 24 90% 50%;
   --popover: 0 0% 100%;
-  --popover-foreground: 220 15% 20%;
+  --popover-foreground: 220 15% 15%;
   --font-sans: "Inter", "Open Sans", system-ui, sans-serif;
-  --radius: 0.5rem;
+  --radius: 0.625rem;
   --primary-border: hsl(from hsl(var(--primary)) h s calc(l + 5));
   --secondary-border: hsl(from hsl(var(--secondary)) h s calc(l + 3));
   --muted-border: hsl(from hsl(var(--muted)) h s calc(l + 2));
   --accent-border: hsl(from hsl(var(--accent)) h s calc(l + 2));
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + 5));
+  --sidebar-bg: 30 20% 95%;
 }
 
 .dark {
   --button-outline: rgba(255, 255, 255, 0.08);
   --elevate-1: rgba(255, 255, 255, 0.03);
   --elevate-2: rgba(255, 255, 255, 0.06);
-  --background: 240 15% 12%;
+  --background: 240 12% 10%;
   --foreground: 40 20% 96%;
-  --border: 240 10% 22%;
-  --card: 240 12% 16%;
+  --border: 240 8% 20%;
+  --card: 240 10% 14%;
   --card-foreground: 40 20% 96%;
-  --card-border: 240 10% 20%;
-  --primary: 280 55% 70%;
+  --card-border: 240 8% 18%;
+  --primary: 24 85% 55%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 240 10% 22%;
+  --secondary: 240 8% 18%;
   --secondary-foreground: 40 20% 96%;
-  --muted: 240 10% 20%;
-  --muted-foreground: 40 10% 70%;
-  --accent: 320 40% 25%;
-  --accent-foreground: 320 30% 90%;
+  --muted: 240 8% 16%;
+  --muted-foreground: 40 10% 60%;
+  --accent: 24 80% 50%;
+  --accent-foreground: 0 0% 100%;
   --destructive: 0 65% 55%;
   --destructive-foreground: 0 0% 100%;
-  --input: 240 10% 25%;
-  --ring: 280 55% 70%;
-  --popover: 240 12% 16%;
+  --input: 240 8% 22%;
+  --ring: 24 85% 55%;
+  --popover: 240 10% 14%;
   --popover-foreground: 40 20% 96%;
+  --sidebar-bg: 240 10% 12%;
 }
 
 @layer base {
@@ -84,5 +86,36 @@
   }
   .active-elevate-2:active::after {
     background-color: var(--elevate-2);
+  }
+}
+
+@layer components {
+  .menu-dropdown {
+    @apply absolute z-50 min-w-[160px] rounded-xl border border-border bg-popover p-1.5 shadow-xl;
+    animation: menu-in 0.15s ease-out;
+  }
+  .menu-dropdown button {
+    @apply flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted;
+  }
+
+  .chat-bubble {
+    @apply rounded-2xl px-4 py-3 text-sm leading-relaxed max-w-[85%];
+  }
+  .chat-bubble-user {
+    @apply bg-primary text-primary-foreground ml-auto rounded-br-md;
+  }
+  .chat-bubble-assistant {
+    @apply bg-muted text-foreground mr-auto rounded-bl-md;
+  }
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }

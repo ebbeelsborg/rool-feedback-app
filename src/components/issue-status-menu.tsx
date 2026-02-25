@@ -1,8 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { type Issue, type IssueStatus } from "@/lib/rool";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, CircleDot, CheckCircle2, XCircle, Tag, Settings2 } from "lucide-react";
 
 const STATUSES: IssueStatus[] = ["Open", "Solved", "Rejected"];
+
+const STATUS_ICONS: Record<IssueStatus, React.ReactNode> = {
+  Open: <CircleDot className="h-3.5 w-3.5" />,
+  Solved: <CheckCircle2 className="h-3.5 w-3.5" />,
+  Rejected: <XCircle className="h-3.5 w-3.5" />,
+};
 
 interface IssueStatusMenuProps {
   issue: Issue;
@@ -31,12 +37,15 @@ export function IssueStatusMenu({ issue, onStatusUpdate, onCategoryUpdate }: Iss
         type="button"
         onClick={() => setOpen((o) => !o)}
         disabled={updating}
-        className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-muted disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium shadow-sm transition-all hover:bg-muted hover:shadow disabled:opacity-50"
       >
-        Menu <ChevronDown className="h-3 w-3" />
+        <Settings2 className="h-3.5 w-3.5 text-muted-foreground" />
+        Actions
+        <ChevronDown className={`h-3 w-3 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
-        <div className="absolute left-0 bottom-full z-50 mb-1 min-w-[120px] rounded-lg border border-border bg-popover py-1 shadow-lg">
+        <div className="menu-dropdown left-0 top-full mt-1.5">
+          <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Status</p>
           {STATUSES.map((s) => (
             <button
               key={s}
@@ -50,10 +59,9 @@ export function IssueStatusMenu({ issue, onStatusUpdate, onCategoryUpdate }: Iss
                   setUpdating(false);
                 }
               }}
-              className={`flex w-full px-3 py-2 text-left text-sm hover:bg-muted ${
-                status === s ? "font-medium" : ""
-              }`}
+              className={status === s ? "font-medium bg-muted" : ""}
             >
+              {STATUS_ICONS[s]}
               {s}
             </button>
           ))}
@@ -74,9 +82,9 @@ export function IssueStatusMenu({ issue, onStatusUpdate, onCategoryUpdate }: Iss
                     }
                   }
                 }}
-                className="flex w-full px-3 py-2 text-left text-sm hover:bg-muted"
               >
-                Recategorize…
+                <Tag className="h-3.5 w-3.5" />
+                Recategorize...
               </button>
             </>
           )}

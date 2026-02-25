@@ -43,18 +43,18 @@ export function SearchPage({
     <div className="flex h-full flex-col p-6">
       <form onSubmit={handleSubmit} className="mb-6">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search issues... (press Enter)"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="pl-9"
+            className="h-11 rounded-xl pl-10 text-sm"
           />
         </div>
       </form>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="grid gap-3 sm:grid-cols-2" style={{ maxWidth: "min(100%, 720px)" }}>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" style={{ maxWidth: "min(100%, 960px)" }}>
           {paginated.map((issue) => (
             <IssueCard
               key={issue.id ?? issue.createdAt}
@@ -67,9 +67,14 @@ export function SearchPage({
         </div>
 
         {issues.length === 0 && (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            {searchQuery ? "No matching issues." : "Enter a search and press Enter."}
-          </p>
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="rounded-2xl bg-muted p-4">
+              <Search className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <p className="mt-4 text-sm text-muted-foreground">
+              {searchQuery ? "No matching issues." : "Enter a search and press Enter."}
+            </p>
+          </div>
         )}
 
         {issues.length > PAGE_SIZE && (
@@ -78,18 +83,18 @@ export function SearchPage({
               type="button"
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={currentPage === 0}
-              className="rounded border border-border px-3 py-1 text-sm disabled:opacity-50"
+              className="rounded-xl border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-muted disabled:opacity-50"
             >
               Previous
             </button>
-            <span className="text-sm text-muted-foreground">
+            <span className="px-2 text-sm text-muted-foreground">
               {currentPage + 1} / {totalPages}
             </span>
             <button
               type="button"
               onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
               disabled={currentPage >= totalPages - 1}
-              className="rounded border border-border px-3 py-1 text-sm disabled:opacity-50"
+              className="rounded-xl border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-muted disabled:opacity-50"
             >
               Next
             </button>

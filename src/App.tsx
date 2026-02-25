@@ -15,7 +15,7 @@ import { Chat } from "@/components/chat";
 import { SidebarNav, type Section } from "@/components/sidebar-nav";
 import { IssuesPage } from "@/components/issues-page";
 import { SearchPage } from "@/components/search-page";
-import { Heart, Loader2, MessageSquare, FolderOpen, Search } from "lucide-react";
+import { Heart, Loader2, MessageSquare, FolderOpen, Search, ArrowLeft } from "lucide-react";
 import { StatusTag, CategoryTag } from "@/components/issue-card";
 import { IssueStatusMenu } from "@/components/issue-status-menu";
 
@@ -83,12 +83,17 @@ function App() {
   return (
     <ThemeProvider>
       {loading ? (
-        <div className="flex min-h-screen items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <div className="flex min-h-screen items-center justify-center bg-background">
+          <div className="flex flex-col items-center gap-3">
+            <div className="rounded-2xl bg-primary/10 p-4">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          </div>
         </div>
       ) : !space ? (
-        <div className="flex min-h-screen items-center justify-center p-4">
-          <Card className="max-w-md">
+        <div className="flex min-h-screen items-center justify-center bg-background p-4">
+          <Card className="max-w-md shadow-lg">
             <CardHeader>
               <CardTitle>Sign in required</CardTitle>
               <CardDescription>
@@ -98,68 +103,71 @@ function App() {
           </Card>
         </div>
       ) : (
-        <div className="flex h-screen">
-          <aside className="my-4 ml-4 flex w-64 shrink-0 flex-col overflow-hidden rounded-xl border border-border bg-muted/30">
-            <div className="border-b border-border px-4 py-3">
-              <h1 className="flex items-center gap-1.5 truncate text-base font-semibold">
-                Rool <Heart className="h-4 w-4 fill-orange-500 text-orange-500" /> Feedback
+        <div className="flex h-screen bg-background">
+          <aside className="my-3 ml-3 flex w-60 shrink-0 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+            <div className="border-b border-border px-4 py-3.5">
+              <h1 className="flex items-center gap-1.5 truncate text-sm font-bold tracking-tight">
+                Rool <Heart className="h-3.5 w-3.5 fill-primary text-primary" /> Feedback
               </h1>
             </div>
             <SidebarNav section={section} onSectionChange={setSection} />
           </aside>
 
-          <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-            <div className="mx-4 mb-4 mt-4 flex flex-1 flex-col overflow-hidden rounded-xl border border-border bg-background shadow-sm">
+          <main className="flex min-w-0 flex-1 flex-col overflow-hidden p-3">
+            <div className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
             {selectedIssue ? (
-              <div className="flex flex-col overflow-y-auto p-6">
-                <header className="mb-4 flex items-center justify-between border-b border-border pb-3">
-                  <h2 className="text-lg font-semibold">Issue</h2>
+              <div className="flex flex-col overflow-y-auto">
+                <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card/95 px-6 py-4 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+                  <h2 className="text-base font-semibold">Issue Details</h2>
                   <button
                     type="button"
                     onClick={() => setSelectedIssue(null)}
-                    className="rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+                    className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
                   >
-                    ← Back
+                    <ArrowLeft className="h-3.5 w-3.5" />
+                    Back
                   </button>
                 </header>
-                <h1 className="text-xl font-semibold">{selectedIssue.title}</h1>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {new Date(selectedIssue.createdAt).toLocaleDateString("en-GB", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })}
-                </p>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <StatusTag status={selectedIssue.status ?? "Open"} />
-                  <CategoryTag category={selectedIssue.category ?? "General"} />
-                  {selectedIssue.id && space && (
-                    <IssueStatusMenu
-                      issue={selectedIssue}
-                      onStatusUpdate={async (newStatus) => {
-                        await updateIssueStatus(space, selectedIssue.id!, newStatus);
-                        setSelectedIssue({ ...selectedIssue, status: newStatus });
-                        refreshIssues();
-                      }}
-                      onCategoryUpdate={async (newCategory) => {
-                        await updateIssueCategory(space, selectedIssue.id!, newCategory);
-                        setSelectedIssue({ ...selectedIssue, category: newCategory });
-                        refreshIssues();
-                      }}
-                    />
-                  )}
+                <div className="p-6">
+                  <h1 className="text-xl font-bold">{selectedIssue.title}</h1>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {new Date(selectedIssue.createdAt).toLocaleDateString("en-GB", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </p>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <StatusTag status={selectedIssue.status ?? "Open"} />
+                    <CategoryTag category={selectedIssue.category ?? "General"} />
+                    {selectedIssue.id && space && (
+                      <IssueStatusMenu
+                        issue={selectedIssue}
+                        onStatusUpdate={async (newStatus) => {
+                          await updateIssueStatus(space, selectedIssue.id!, newStatus);
+                          setSelectedIssue({ ...selectedIssue, status: newStatus });
+                          refreshIssues();
+                        }}
+                        onCategoryUpdate={async (newCategory) => {
+                          await updateIssueCategory(space, selectedIssue.id!, newCategory);
+                          setSelectedIssue({ ...selectedIssue, category: newCategory });
+                          refreshIssues();
+                        }}
+                      />
+                    )}
+                  </div>
+                  <pre className="mt-6 whitespace-pre-wrap rounded-xl border border-border bg-muted/30 p-5 text-sm leading-relaxed">
+                    {selectedIssue.content}
+                  </pre>
                 </div>
-                <pre className="mt-4 whitespace-pre-wrap rounded-xl border border-border bg-card p-4 text-sm shadow-sm">
-                  {selectedIssue.content}
-                </pre>
               </div>
             ) : (
               <>
-                <header className="shrink-0 border-b border-border bg-background/95 px-6 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                  <h2 className="flex items-center gap-2 text-lg font-semibold">
-                    {section === "chat" && <><MessageSquare className="h-5 w-5 text-muted-foreground" /> Chat</>}
-                    {section === "issues" && <><FolderOpen className="h-5 w-5 text-muted-foreground" /> Issues</>}
-                    {section === "search" && <><Search className="h-5 w-5 text-muted-foreground" /> Search</>}
+                <header className="shrink-0 border-b border-border bg-card/95 px-6 py-4 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+                  <h2 className="flex items-center gap-2 text-base font-semibold">
+                    {section === "chat" && <><MessageSquare className="h-4.5 w-4.5 text-primary" /> Chat</>}
+                    {section === "issues" && <><FolderOpen className="h-4.5 w-4.5 text-primary" /> Issues</>}
+                    {section === "search" && <><Search className="h-4.5 w-4.5 text-primary" /> Search</>}
                   </h2>
                 </header>
                 <div className="flex-1 overflow-hidden">

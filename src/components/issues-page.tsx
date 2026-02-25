@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { type Issue } from "@/lib/rool";
 import { IssueCard } from "@/components/issue-card";
+import { FolderOpen } from "lucide-react";
 
 const PAGE_SIZE = 10;
 
@@ -24,7 +25,7 @@ export function IssuesPage({ issues, onSelectIssue, onStatusChange, onCategoryCh
   return (
     <div className="flex h-full flex-col">
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="grid gap-3 sm:grid-cols-2" style={{ maxWidth: "min(100%, 720px)" }}>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" style={{ maxWidth: "min(100%, 960px)" }}>
           {paginated.map((issue) => (
             <IssueCard
               key={issue.id ?? issue.createdAt}
@@ -37,9 +38,15 @@ export function IssuesPage({ issues, onSelectIssue, onStatusChange, onCategoryCh
         </div>
 
         {issues.length === 0 && (
-          <p className="py-12 text-center text-sm text-muted-foreground">
-            No issues yet. Chat about your issue, then summarize and save.
-          </p>
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="rounded-2xl bg-muted p-4">
+              <FolderOpen className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <p className="mt-4 text-sm font-medium text-foreground">No issues yet</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Chat about your issue, then summarize and save.
+            </p>
+          </div>
         )}
 
         {issues.length > PAGE_SIZE && (
@@ -48,18 +55,18 @@ export function IssuesPage({ issues, onSelectIssue, onStatusChange, onCategoryCh
               type="button"
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={currentPage === 0}
-              className="rounded-lg border border-border px-3 py-1.5 text-sm transition-colors hover:bg-muted disabled:opacity-50"
+              className="rounded-xl border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-muted disabled:opacity-50"
             >
               Previous
             </button>
-            <span className="text-sm text-muted-foreground">
+            <span className="px-2 text-sm text-muted-foreground">
               {currentPage + 1} / {totalPages}
             </span>
             <button
               type="button"
               onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
               disabled={currentPage >= totalPages - 1}
-              className="rounded-lg border border-border px-3 py-1.5 text-sm transition-colors hover:bg-muted disabled:opacity-50"
+              className="rounded-xl border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-muted disabled:opacity-50"
             >
               Next
             </button>

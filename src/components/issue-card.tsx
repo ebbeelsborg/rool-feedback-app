@@ -1,12 +1,18 @@
 import { useState, useRef, useEffect } from "react";
 import { type Issue, type IssueStatus } from "@/lib/rool";
 import { formatDate } from "@/lib/format";
-import { MoreVertical } from "lucide-react";
+import { MoreVertical, CircleDot, CheckCircle2, XCircle, Tag } from "lucide-react";
 
 const STATUS_STYLES: Record<IssueStatus, string> = {
-  Open: "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400",
-  Solved: "bg-green-100 text-green-700 dark:bg-green-950/60 dark:text-green-400",
-  Rejected: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/60 dark:text-yellow-400",
+  Open: "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-200 dark:border-amber-800/40",
+  Solved: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40",
+  Rejected: "bg-red-100 text-red-800 dark:bg-red-950/50 dark:text-red-400 border border-red-200 dark:border-red-800/40",
+};
+
+const STATUS_ICONS: Record<IssueStatus, React.ReactNode> = {
+  Open: <CircleDot className="h-3 w-3" />,
+  Solved: <CheckCircle2 className="h-3 w-3" />,
+  Rejected: <XCircle className="h-3 w-3" />,
 };
 
 const STATUSES: IssueStatus[] = ["Open", "Solved", "Rejected"];
@@ -14,8 +20,9 @@ const STATUSES: IssueStatus[] = ["Open", "Solved", "Rejected"];
 export function StatusTag({ status }: { status: IssueStatus }) {
   return (
     <span
-      className={`inline-block rounded-md px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[status]}`}
+      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_STYLES[status]}`}
     >
+      {STATUS_ICONS[status]}
       {status}
     </span>
   );
@@ -23,14 +30,15 @@ export function StatusTag({ status }: { status: IssueStatus }) {
 
 export function CategoryTag({ category }: { category: string }) {
   return (
-    <span className="inline-block rounded-md bg-orange-50 px-2 py-0.5 text-xs text-orange-700 dark:bg-orange-950/50 dark:text-orange-400">
+    <span className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-2.5 py-0.5 text-xs font-medium text-orange-700 dark:border-orange-800/40 dark:bg-orange-950/40 dark:text-orange-400">
+      <Tag className="h-3 w-3" />
       {category}
     </span>
   );
 }
 
 const truncate = (s: string, max: number) =>
-  s.length <= max ? s : s.slice(0, max - 1) + "…";
+  s.length <= max ? s : s.slice(0, max - 1) + "\u2026";
 
 interface IssueCardProps {
   issue: Issue;
@@ -59,19 +67,19 @@ export function IssueCard({ issue, onClick, onStatusChange, onCategoryChange, cl
   const canChange = issue.id && (onStatusChange || onCategoryChange);
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`group relative ${className}`}>
       <button
         type="button"
         onClick={onClick}
-        className="flex h-full w-full flex-col rounded-xl border border-border bg-card p-4 text-left shadow-sm transition-all duration-200 hover:shadow-md hover:border-border/80"
+        className="flex h-full w-full flex-col rounded-xl border border-border bg-card p-4 text-left shadow-sm transition-all duration-200 hover:shadow-lg hover:border-primary/20 hover:-translate-y-0.5"
       >
-        <p className="line-clamp-2 min-h-[2.5rem] max-w-[28ch] font-medium">
+        <p className="line-clamp-2 min-h-[2.5rem] max-w-[28ch] font-semibold leading-snug">
           {truncate(issue.title || "Untitled", 50)}
         </p>
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="mt-1.5 text-xs text-muted-foreground">
           {formatDate(issue.createdAt)}
         </p>
-        <div className="mt-2 flex flex-wrap gap-1.5">
+        <div className="mt-3 flex flex-wrap gap-1.5">
           <StatusTag status={status} />
           <CategoryTag category={category} />
         </div>
@@ -84,29 +92,33 @@ export function IssueCard({ issue, onClick, onStatusChange, onCategoryChange, cl
               e.stopPropagation();
               setMenuOpen((o) => !o);
             }}
-            className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="rounded-lg p-1.5 text-muted-foreground opacity-0 transition-all hover:bg-muted hover:text-foreground group-hover:opacity-100"
             aria-label="Issue menu"
           >
             <MoreVertical className="h-4 w-4" />
           </button>
           {menuOpen && (
-            <div className="absolute right-0 bottom-full z-50 mb-1 min-w-[120px] rounded-lg border border-border bg-popover py-1 shadow-lg">
-              {onStatusChange && STATUSES.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onStatusChange(issue, s);
-                    setMenuOpen(false);
-                  }}
-                  className={`flex w-full px-3 py-2 text-left text-sm hover:bg-muted ${
-                    status === s ? "font-medium" : ""
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
+            <div className="menu-dropdown right-0 top-full mt-1">
+              {onStatusChange && (
+                <>
+                  <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Status</p>
+                  {STATUSES.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onStatusChange(issue, s);
+                        setMenuOpen(false);
+                      }}
+                      className={status === s ? "font-medium bg-muted" : ""}
+                    >
+                      {STATUS_ICONS[s]}
+                      {s}
+                    </button>
+                  ))}
+                </>
+              )}
               {onCategoryChange && (
                 <>
                   <div className="my-1 border-t border-border" />
@@ -120,9 +132,9 @@ export function IssueCard({ issue, onClick, onStatusChange, onCategoryChange, cl
                         setMenuOpen(false);
                       }
                     }}
-                    className="flex w-full px-3 py-2 text-left text-sm hover:bg-muted"
                   >
-                    Recategorize…
+                    <Tag className="h-3.5 w-3.5" />
+                    Recategorize...
                   </button>
                 </>
               )}
