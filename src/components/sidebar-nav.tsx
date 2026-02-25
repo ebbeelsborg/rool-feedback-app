@@ -15,22 +15,25 @@ export function SidebarNav({ section, onSectionChange }: SidebarNavProps) {
   ];
 
   return (
-    <nav className="flex flex-col gap-0.5 p-2">
-      {items.map(({ id, label, icon }) => (
-        <button
-          key={id}
-          type="button"
-          onClick={() => onSectionChange(id)}
-          className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors ${
-            section === id
-              ? "bg-primary/10 text-primary"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground"
-          }`}
-        >
-          {icon}
-          {label}
-        </button>
-      ))}
+    <nav className="flex flex-col gap-1 p-2">
+      {items.map(({ id, label, icon }) => {
+        const isSelected = section === id;
+        return (
+          <button
+            key={id}
+            type="button"
+            onClick={() => onSectionChange(id)}
+            className={`flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-all duration-200 ${
+              isSelected
+                ? "bg-primary/20 text-primary shadow-sm ring-1 ring-primary/30"
+                : "text-muted-foreground hover:bg-primary/10 hover:text-primary/80"
+            }`}
+          >
+            {icon}
+            {label}
+          </button>
+        );
+      })}
     </nav>
   );
 }

@@ -95,9 +95,9 @@ function App() {
         </div>
       ) : (
         <div className="flex h-screen">
-          <aside className="flex min-w-[320px] shrink-0 flex-col border-r border-border bg-muted/20">
-            <div className="flex items-center justify-between border-b border-border px-4 py-3">
-              <h1 className="text-lg font-semibold">Rool ❤️ Feedback</h1>
+          <aside className="flex w-48 shrink-0 flex-col border-r border-border bg-muted/20">
+            <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2.5">
+              <h1 className="truncate text-base font-semibold">Rool <span className="text-orange-500">❤️</span> Feedback</h1>
               <ThemeToggle />
             </div>
             <SidebarNav section={section} onSectionChange={setSection} />
@@ -106,10 +106,13 @@ function App() {
           <main className="flex min-w-0 flex-1 flex-col">
             {selectedIssue ? (
               <div className="flex flex-col p-6">
+                <header className="mb-4 border-b border-border pb-3">
+                  <h2 className="text-lg font-semibold">Issue</h2>
+                </header>
                 <button
                   type="button"
                   onClick={() => setSelectedIssue(null)}
-                  className="mb-4 self-start text-sm text-muted-foreground hover:text-foreground"
+                  className="mb-4 self-start rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition-all hover:bg-primary/10 hover:text-primary"
                 >
                   ← Back
                 </button>
@@ -118,16 +121,18 @@ function App() {
                   {new Date(selectedIssue.createdAt).toLocaleString()}
                   {selectedIssue.category && ` · ${selectedIssue.category}`}
                 </p>
-                <pre className="mt-4 whitespace-pre-wrap rounded-lg border border-border bg-muted/30 p-4 text-sm">
+                <pre className="mt-4 whitespace-pre-wrap rounded-xl border border-border bg-card p-4 text-sm shadow-sm">
                   {selectedIssue.content}
                 </pre>
               </div>
             ) : (
               <>
                 <header className="shrink-0 border-b border-border px-4 py-3">
-                  <p className="text-sm text-muted-foreground">
-                    Chat about your issue, then summarize and save.
-                  </p>
+                  <h2 className="text-lg font-semibold">
+                    {section === "chat" && "Chat"}
+                    {section === "issues" && "Issues"}
+                    {section === "search" && "Search"}
+                  </h2>
                 </header>
                 <div className="flex-1 overflow-hidden">
                   {section === "chat" && (
