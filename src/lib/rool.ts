@@ -4,13 +4,13 @@ export type IssueStatus = "Open" | "Solved" | "Rejected";
 
 export interface Issue {
   id?: string;
-  type: "issue";
+  type: "Issue";
   title: string;
   content: string;
   category?: string;
   status?: IssueStatus;
   createdBy?: string;
-  createdByHandle?: string;
+  createdByName?: string;
   createdAt: number;
   dateKey: string;
 }
@@ -154,25 +154,25 @@ export async function createIssue(
   const title = data.title.slice(0, MAX_TITLE_LENGTH);
   const status = data.status ?? "Open";
 
-  let createdByHandle: string | undefined;
+  let createdByName: string | undefined;
   try {
     const user = await getRoolClient().getCurrentUser();
-    createdByHandle = user.slug || user.name || user.email?.split("@")[0] || undefined;
+    createdByName = user.name || user.slug || user.email?.split("@")[0] || undefined;
   } catch {
     const auth = getRoolClient().getAuthUser();
-    createdByHandle = auth.name || auth.email?.split("@")[0] || undefined;
+    createdByName = auth.name || auth.email?.split("@")[0] || undefined;
   }
 
   try {
     await space.createObject({
       data: {
-        type: "issue",
+        type: "Issue",
         title,
         content: data.content,
         category: data.category,
         status,
         createdBy: space.userId,
-        createdByHandle,
+        createdByName,
         createdAt: now,
         dateKey,
       },
@@ -198,13 +198,13 @@ function normalizeToIssue(obj: Record<string, unknown>): Issue {
   const id = (raw.id ?? obj.id) as string;
   return {
     id,
-    type: "issue",
+    type: "Issue",
     title: (raw.title ?? "Untitled") as string,
     content,
     category: (raw.category ?? "General") as string,
     status,
     createdBy: raw.createdBy as string | undefined,
-    createdByHandle: (raw.createdByHandle ?? raw.reportedBy ?? undefined) as string | undefined,
+    createdByName: (raw.createdByName ?? raw.createdByHandle ?? raw.reportedBy ?? undefined) as string | undefined,
     createdAt,
     dateKey: (raw.dateKey ?? new Date(createdAt).toISOString().slice(0, 10)) as string,
   };

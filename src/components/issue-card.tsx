@@ -78,9 +78,9 @@ export function IssueCard({ issue, onClick, onStatusChange, onCategoryChange, ca
           {truncate(issue.title || "Untitled", 50)}
         </p>
         <p className="mt-1.5 flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
-          {issue.createdByHandle && (
+          {issue.createdByName && (
             <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 font-medium text-foreground">
-              @{issue.createdByHandle}
+              {issue.createdByName.replace(/^@+/, "")}
             </span>
           )}
           {formatDate(issue.createdAt)}

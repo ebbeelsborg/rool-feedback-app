@@ -268,11 +268,11 @@ function App() {
                             {summary && (
                               <p className="mt-3 font-bold text-foreground">{summary}</p>
                             )}
-                            {(displayIssue.createdByHandle || displayIssue.createdAt) && (
+                            {(displayIssue.createdByName || displayIssue.createdAt) && (
                               <p className="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
-                                {displayIssue.createdByHandle && (
+                                {displayIssue.createdByName && (
                                   <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 font-medium text-foreground">
-                                    @{displayIssue.createdByHandle}
+                                    {displayIssue.createdByName.replace(/^@+/, "")}
                                   </span>
                                 )}
                                 {displayIssue.createdAt &&
