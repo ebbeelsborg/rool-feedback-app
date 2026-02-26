@@ -77,7 +77,12 @@ export function IssueCard({ issue, onClick, onStatusChange, onCategoryChange, ca
         <p className="line-clamp-2 min-h-[2.5rem] max-w-[28ch] font-semibold leading-snug">
           {truncate(issue.title || "Untitled", 50)}
         </p>
-        <p className="mt-1.5 text-xs text-muted-foreground">
+        <p className="mt-1.5 flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
+          {issue.createdByHandle && (
+            <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 font-medium text-foreground">
+              @{issue.createdByHandle}
+            </span>
+          )}
           {formatDate(issue.createdAt)}
         </p>
         <div className="mt-3 flex flex-wrap gap-1.5">

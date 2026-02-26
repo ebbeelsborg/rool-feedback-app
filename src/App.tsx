@@ -12,6 +12,8 @@ import {
   type Issue,
   type IssueStatus,
 } from "@/lib/rool";
+import { parseUrl, pushUrl, type Section as UrlSection } from "@/lib/url-sync";
+import { parseIssueContent } from "@/lib/issue-content";
 import { Chat } from "@/components/chat";
 import { SidebarNav, type Section } from "@/components/sidebar-nav";
 import { IssuesPage } from "@/components/issues-page";
@@ -33,6 +35,32 @@ function App() {
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
 
   useEffect(() => {
+    const { section: urlSection, issueId } = parseUrl();
+    setSection(urlSection);
+    setSelectedIssue(issueId ? ({ id: issueId } as Issue) : null);
+  }, []);
+
+  useEffect(() => {
+    if (!space || loading) return;
+    pushUrl(section as UrlSection, selectedIssue?.id ?? null);
+  }, [section, selectedIssue?.id, space, loading]);
+
+  useEffect(() => {
+    const onHashChange = () => {
+      const { section: urlSection, issueId } = parseUrl();
+      setSection(urlSection);
+      if (issueId) {
+        const issue = issues.find((i) => i.id === issueId);
+        setSelectedIssue(issue ?? ({ id: issueId } as Issue));
+      } else {
+        setSelectedIssue(null);
+      }
+    };
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, [issues]);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function init() {
@@ -42,7 +70,14 @@ function App() {
       if (s) {
         setSpace(s);
         const list = await getIssues(s);
-        if (!cancelled) setIssues(list);
+        if (!cancelled) {
+          setIssues(list);
+          const { issueId } = parseUrl();
+          if (issueId) {
+            const issue = list.find((i) => i.id === issueId);
+            setSelectedIssue(issue ?? ({ id: issueId } as Issue));
+          }
+        }
 
         s.on("objectCreated", async () => {
           const list = await getIssues(s);
@@ -79,6 +114,18 @@ function App() {
     setSearchQuery(query);
   }
 
+  function handleSectionChange(newSection: Section) {
+    setSection(newSection);
+    if (newSection !== "issues") {
+      setSelectedIssue(null);
+    }
+  }
+
+  const displayIssue =
+    selectedIssue && issues.length > 0
+      ? issues.find((i) => i.id === selectedIssue.id) ?? selectedIssue
+      : selectedIssue;
+
   return (
     <ThemeProvider>
       {loading ? (
@@ -109,71 +156,48 @@ function App() {
                 Rool <Heart className="h-3.5 w-3.5 fill-orange-500 text-orange-500" /> Feedback
               </h1>
             </div>
-            <SidebarNav section={section} onSectionChange={setSection} />
+            <SidebarNav section={section} onSectionChange={handleSectionChange} />
           </aside>
 
           <main className="flex min-w-0 flex-1 flex-col overflow-hidden p-3">
             <div className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-            {selectedIssue ? (
-              <div className="flex flex-col overflow-y-auto">
-                <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card/95 px-6 py-4 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-                  <h2 className="text-base font-semibold">Issue Details</h2>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedIssue(null)}
-                    className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
-                  >
-                    <ArrowLeft className="h-3.5 w-3.5" />
-                    Back
-                  </button>
-                </header>
-                <div className="p-6">
-                  <h1 className="text-xl font-bold">{selectedIssue.title}</h1>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    {new Date(selectedIssue.createdAt).toLocaleDateString("en-GB", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })}
-                  </p>
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <StatusTag status={selectedIssue.status ?? "Open"} />
-                    <CategoryTag category={selectedIssue.category ?? "General"} />
-                    {selectedIssue.id && space && canEditIssue(space, selectedIssue) && (
-                      <IssueStatusMenu
-                        issue={selectedIssue}
-                        onStatusUpdate={async (newStatus) => {
-                          await updateIssueStatus(space, selectedIssue.id!, newStatus, selectedIssue);
-                          setSelectedIssue({ ...selectedIssue, status: newStatus });
-                          refreshIssues();
-                        }}
-                        onCategoryUpdate={async (newCategory) => {
-                          await updateIssueCategory(space, selectedIssue.id!, newCategory, selectedIssue);
-                          setSelectedIssue({ ...selectedIssue, category: newCategory });
-                          refreshIssues();
-                        }}
-                      />
-                    )}
+              <header className="shrink-0 border-b border-border bg-card/95 px-6 py-4 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+                {displayIssue ? (
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-base font-semibold">Issue Details</h2>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedIssue(null);
+                        setSection("issues");
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+                    >
+                      <ArrowLeft className="h-3.5 w-3.5" />
+                      Back
+                    </button>
                   </div>
-                  <pre className="mt-6 whitespace-pre-wrap rounded-xl border border-border bg-muted/30 p-5 text-sm leading-relaxed">
-                    {selectedIssue.content}
-                  </pre>
-                </div>
-              </div>
-            ) : (
-              <>
-                <header className="shrink-0 border-b border-border bg-card/95 px-6 py-4 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+                ) : (
                   <h2 className="flex items-center gap-2 text-base font-semibold">
                     {section === "chat" && <><MessageSquare className="h-4.5 w-4.5 text-primary" /> Chat</>}
                     {section === "issues" && <><FolderOpen className="h-4.5 w-4.5 text-primary" /> Issues</>}
                     {section === "search" && <><Search className="h-4.5 w-4.5 text-primary" /> Search</>}
                   </h2>
-                </header>
-                <div className="flex-1 overflow-hidden">
-                  {section === "chat" && (
-                    <Chat space={space} onIssueSaved={refreshIssues} />
-                  )}
-                  {section === "issues" && (
+                )}
+              </header>
+              <div className="relative flex-1 overflow-hidden">
+                <div
+                  className={`absolute inset-0 flex flex-col ${
+                    !displayIssue && section === "chat" ? "z-10" : "pointer-events-none invisible"
+                  }`}
+                >
+                  <Chat space={space} issues={issues} onIssueSaved={refreshIssues} />
+                </div>
+                <div
+                  className={`absolute inset-0 overflow-hidden ${
+                    !displayIssue && section === "issues" ? "z-10" : "pointer-events-none invisible"
+                  }`}
+                >
                     <IssuesPage
                       issues={issues}
                       onSelectIssue={(i) => setSelectedIssue(i)}
@@ -199,8 +223,12 @@ function App() {
                           : undefined
                       }
                     />
-                  )}
-                  {section === "search" && (
+                  </div>
+                  <div
+                    className={`absolute inset-0 overflow-hidden ${
+                      !displayIssue && section === "search" ? "z-10" : "pointer-events-none invisible"
+                    }`}
+                  >
                     <SearchPage
                       issues={searchResults}
                       searchQuery={searchQuery}
@@ -228,10 +256,62 @@ function App() {
                           : undefined
                       }
                     />
-                  )}
+                  </div>
+                {displayIssue && (
+                  <div className="absolute inset-0 z-20 flex flex-col overflow-y-auto bg-card">
+                    <div className="p-6">
+                      <h1 className="text-xl font-bold">{displayIssue.title ?? "Issue"}</h1>
+                      {(() => {
+                        const { summary, body } = parseIssueContent(displayIssue.content);
+                        return (
+                          <>
+                            {summary && (
+                              <p className="mt-3 font-bold text-foreground">{summary}</p>
+                            )}
+                            {(displayIssue.createdByHandle || displayIssue.createdAt) && (
+                              <p className="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
+                                {displayIssue.createdByHandle && (
+                                  <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 font-medium text-foreground">
+                                    @{displayIssue.createdByHandle}
+                                  </span>
+                                )}
+                                {displayIssue.createdAt &&
+                                  new Date(displayIssue.createdAt).toLocaleDateString("en-GB", {
+                                    day: "numeric",
+                                    month: "long",
+                                    year: "numeric",
+                                  })}
+                              </p>
+                            )}
+                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                              <StatusTag status={displayIssue.status ?? "Open"} />
+                              <CategoryTag category={displayIssue.category ?? "General"} />
+                              {displayIssue.id && space && canEditIssue(space, displayIssue) && (
+                                <IssueStatusMenu
+                                  issue={displayIssue}
+                                  onStatusUpdate={async (newStatus) => {
+                                    await updateIssueStatus(space, displayIssue.id!, newStatus, displayIssue);
+                                    setSelectedIssue({ ...displayIssue, status: newStatus });
+                                    refreshIssues();
+                                  }}
+                                  onCategoryUpdate={async (newCategory) => {
+                                    await updateIssueCategory(space, displayIssue.id!, newCategory, displayIssue);
+                                    setSelectedIssue({ ...displayIssue, category: newCategory });
+                                    refreshIssues();
+                                  }}
+                                />
+                              )}
+                            </div>
+                            <pre className="mt-6 whitespace-pre-wrap rounded-xl border border-border bg-muted/30 p-5 text-sm leading-relaxed">
+                              {body || (displayIssue.id ? "Loading..." : "")}
+                            </pre>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )}
                 </div>
-              </>
-            )}
             </div>
           </main>
         </div>

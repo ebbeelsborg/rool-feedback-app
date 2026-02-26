@@ -6,9 +6,12 @@ import {
   requestSummary,
   createIssue,
   type Space,
+  type Issue,
   type IssueStatus,
 } from "@/lib/rool";
+import { loadChatState, saveChatState, clearChatState } from "@/lib/chat-storage";
 import { StatusTag, CategoryTag } from "@/components/issue-card";
+import { ChatContent } from "@/components/chat-content";
 import { Loader2, Send, FileCheck, Check, Bot, User } from "lucide-react";
 
 export interface Message {
@@ -18,15 +21,25 @@ export interface Message {
 
 interface ChatProps {
   space: Space;
+  issues: Issue[];
   onIssueSaved: () => void;
 }
 
-export function Chat({ space, onIssueSaved }: ChatProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
+export function Chat({ space, issues, onIssueSaved }: ChatProps) {
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const stored = loadChatState();
+    return stored?.messages ?? [];
+  });
+  const [input, setInput] = useState(() => {
+    const stored = loadChatState();
+    return stored?.input ?? "";
+  });
   const [sending, setSending] = useState(false);
   const [summarizing, setSummarizing] = useState(false);
-  const [summary, setSummary] = useState<{ title: string; summary: string; category: string; status: IssueStatus } | null>(null);
+  const [summary, setSummary] = useState<{ title: string; summary: string; category: string; status: IssueStatus } | null>(() => {
+    const stored = loadChatState();
+    return stored?.summary ?? null;
+  });
   const [approving, setApproving] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -34,6 +47,10 @@ export function Chat({ space, onIssueSaved }: ChatProps) {
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, summary]);
+
+  useEffect(() => {
+    saveChatState({ messages, input, summary });
+  }, [messages, input, summary]);
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
@@ -45,7 +62,7 @@ export function Chat({ space, onIssueSaved }: ChatProps) {
     setSending(true);
 
     try {
-      const { message } = await chatPrompt(space!, text);
+      const { message } = await chatPrompt(space!, text, issues);
       setMessages((m) => [...m, { role: "assistant", content: message }]);
     } catch (err) {
       setMessages((m) => [
@@ -95,12 +112,21 @@ export function Chat({ space, onIssueSaved }: ChatProps) {
       });
       if (result.success) {
         setMessages([]);
+        setInput("");
         setSummary(null);
+        clearChatState();
         onIssueSaved();
       }
     } finally {
       setApproving(false);
     }
+  }
+
+  function handleClear() {
+    setMessages([]);
+    setInput("");
+    setSummary(null);
+    clearChatState();
   }
 
   return (
@@ -134,7 +160,7 @@ export function Chat({ space, onIssueSaved }: ChatProps) {
               <div className={`chat-bubble ${
                 m.role === "user" ? "chat-bubble-user" : "chat-bubble-assistant"
               }`}>
-                <div className="whitespace-pre-wrap">{m.content}</div>
+                <ChatContent content={m.content} />
               </div>
             </div>
           ))}
@@ -215,6 +241,14 @@ export function Chat({ space, onIssueSaved }: ChatProps) {
             >
               {summarizing ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileCheck className="h-4 w-4" />}
               Summarize
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={handleClear}
+              disabled={messages.length === 0 && !summary && !input.trim()}
+              className="rounded-xl text-muted-foreground hover:text-foreground"
+            >
+              Clear
             </Button>
           </div>
         </form>

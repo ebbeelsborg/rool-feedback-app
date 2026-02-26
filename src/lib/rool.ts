@@ -10,11 +10,12 @@ export interface Issue {
   category?: string;
   status?: IssueStatus;
   createdBy?: string;
+  createdByHandle?: string;
   createdAt: number;
   dateKey: string;
 }
 
-const SPACE_NAME = "Rool Issues";
+const SPACE_NAME = "Rool Feedback";
 
 const SHARED_SPACE_ID = import.meta.env.VITE_ROOL_FEEDBACK_SPACE_ID as string | undefined;
 
@@ -32,12 +33,17 @@ export async function ensureSpace() {
   const authenticated = await rool.initialize();
 
   if (!authenticated) {
-    rool.login("Rool Issues");
+    rool.login("Rool Feedback");
     return null;
   }
 
   if (SHARED_SPACE_ID?.trim()) {
-    return rool.openSpace(SHARED_SPACE_ID.trim());
+    const space = await rool.openSpace(SHARED_SPACE_ID.trim());
+    // Ensure anyone with the app link can access the space
+    if (space && space.linkAccess !== "editor") {
+      await space.setLinkAccess("editor").catch(() => {});
+    }
+    return space;
   }
 
   const spaces = await rool.listSpaces();
@@ -52,11 +58,44 @@ export async function ensureSpace() {
 
 export type Space = Awaited<ReturnType<typeof ensureSpace>>;
 
+function getChatInstruction(): string {
+  const base = import.meta.env.BASE_URL ?? "/rool-feedback-app/";
+  const basePath = base.endsWith("/") ? base.slice(0, -1) : base;
+  const issueUrlExample =
+    typeof window !== "undefined"
+      ? `${window.location.origin}${basePath}/#/issues/{id}`
+      : `https://use.rool.app${basePath}/#/issues/{id}`;
+
+  return `You help users clarify their feedback and condense it into a concrete issue. Be forthcoming and effective: ask brief, focused questions to fill gaps; suggest clearer wording when helpful. Thank the user for reporting, but stay to-the-point—no fluff.
+
+Rules: Do NOT create, update, or save any objects. Only respond in chat. Issues appear in the Issues list only when the user clicks Summarize, then Approve & Save. Never claim you created or saved an issue yourself. The user's Issues list is the source of truth—if the user says they don't see an issue, it does not exist. Never say an issue is "already there", "already saved", "already logged", or "in the list" unless the user has just confirmed they completed Approve & Save. If they repeat a request, suggest they click Summarize when ready. You may acknowledge that an issue was saved when the user confirms they approved it (e.g. "I just saved it").
+
+When referencing an existing issue: use the "Current issues in the space" list provided below—it has id, title, category, and content for each issue. Match the user's request to the right issue and use its id for the URL. Format: [Issue title](URL) where URL is ${issueUrlExample} with the issue's id. Example: [GitHub login request](${issueUrlExample.replace("{id}", "abc123")}).
+
+`;
+}
+
+function formatIssuesForPrompt(issues: Issue[]): string {
+  if (issues.length === 0) return "No issues in the space yet.";
+  return issues
+    .map((i) => {
+      const snippet = (i.content ?? "").slice(0, 200);
+      return `- id: ${i.id ?? "?"} | title: ${i.title ?? "Untitled"} | category: ${i.category ?? "General"} | content: ${snippet}${snippet.length >= 200 ? "..." : ""}`;
+    })
+    .join("\n");
+}
+
 export async function chatPrompt(
   space: NonNullable<Space>,
-  userMessage: string
+  userMessage: string,
+  issues: Issue[] = []
 ): Promise<{ message: string }> {
-  const { message } = await space.prompt(userMessage);
+  const issuesBlock = `\n\nCurrent issues in the space (use these when referencing existing issues):\n${formatIssuesForPrompt(issues)}\n`;
+  const fullPrompt = getChatInstruction() + issuesBlock + "\nUser message: " + userMessage;
+  const { message } = await space.prompt(fullPrompt, {
+    readOnly: true,
+    effort: "QUICK",
+  });
   return { message };
 }
 
@@ -69,7 +108,7 @@ export async function requestSummary(space: NonNullable<Space>): Promise<{
   status: IssueStatus;
 }> {
   const { message } = await space.prompt(
-    "Based on our conversation, provide: a short title (max 50 characters), a 2-3 sentence summary, a category (one word, e.g. Bug, Feature, UX), and a status (exactly one of: Open, Solved, Rejected). New issues are usually Open. Reply in this exact JSON format only, no other text: {\"title\": \"...\", \"summary\": \"...\", \"category\": \"...\", \"status\": \"Open\"}"
+    "Based on our conversation, provide: a short title (max 50 characters), a 2-3 sentence summary, a category (one word, e.g. Bug, Feature, UX), and a status (exactly one of: Open, Solved, Rejected). New issues are usually Open. When writing the summary, refer to the reporter as 'The user' (e.g. 'The user is...') not 'Users' (e.g. 'Users are...'). Reply in this exact JSON format only, no other text: {\"title\": \"...\", \"summary\": \"...\", \"category\": \"...\", \"status\": \"Open\"}"
   );
   const raw = message.trim();
   const jsonMatch = raw.match(/\{[\s\S]*\}/);
@@ -100,6 +139,15 @@ export async function createIssue(
   const title = data.title.slice(0, MAX_TITLE_LENGTH);
   const status = data.status ?? "Open";
 
+  let createdByHandle: string | undefined;
+  try {
+    const user = await getRoolClient().getCurrentUser();
+    createdByHandle = user.slug || user.name || user.email?.split("@")[0] || undefined;
+  } catch {
+    const auth = getRoolClient().getAuthUser();
+    createdByHandle = auth.name || auth.email?.split("@")[0] || undefined;
+  }
+
   try {
     await space.createObject({
       data: {
@@ -109,6 +157,7 @@ export async function createIssue(
         category: data.category,
         status,
         createdBy: space.userId,
+        createdByHandle,
         createdAt: now,
         dateKey,
       },
@@ -122,16 +171,47 @@ export async function createIssue(
   }
 }
 
+function normalizeToIssue(obj: Record<string, unknown>): Issue {
+  // Support both flat objects and nested data (RoolObjectEntry)
+  const raw = (obj.data as Record<string, unknown>) ?? obj;
+  const status =
+    raw.status === "Solved" || raw.status === "Rejected"
+      ? (raw.status as IssueStatus)
+      : "Open";
+  const content = (raw.content ?? raw.description ?? "") as string;
+  const createdAt = (raw.createdAt as number) ?? 0;
+  const id = (raw.id ?? obj.id) as string;
+  return {
+    id,
+    type: "issue",
+    title: (raw.title ?? "Untitled") as string,
+    content,
+    category: (raw.category ?? "General") as string,
+    status,
+    createdBy: raw.createdBy as string | undefined,
+    createdByHandle: (raw.createdByHandle ?? raw.reportedBy ?? undefined) as string | undefined,
+    createdAt,
+    dateKey: (raw.dateKey ?? new Date(createdAt).toISOString().slice(0, 10)) as string,
+  };
+}
+
 export async function getIssues(space: NonNullable<Space>): Promise<Issue[]> {
   try {
-    const { objects } = await space.findObjects({
-      where: { type: "issue" },
-      limit: 200,
+    const [byLower, byUpper] = await Promise.all([
+      space.findObjects({ where: { type: "issue" }, limit: 200 }),
+      space.findObjects({ where: { type: "Issue" }, limit: 200 }),
+    ]);
+    const objects = [...(byLower.objects ?? []), ...(byUpper.objects ?? [])];
+    const seen = new Set<string>();
+    const deduped = objects.filter((o) => {
+      const id = (o as { id?: string }).id;
+      if (!id || seen.has(id)) return false;
+      seen.add(id);
+      return true;
     });
-
-    return (objects as unknown as Issue[])
-      .filter((d) => d?.type === "issue")
-      .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+    return deduped
+      .map((o) => normalizeToIssue(o as Record<string, unknown>))
+      .sort((a, b) => b.createdAt - a.createdAt);
   } catch {
     return [];
   }
