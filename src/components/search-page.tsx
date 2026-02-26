@@ -11,6 +11,7 @@ interface SearchPageProps {
   searchQuery: string;
   onSearch: (query: string) => void;
   onSelectIssue: (issue: Issue) => void;
+  canEdit?: (issue: Issue) => boolean;
   onStatusChange?: (issue: Issue, newStatus: import("@/lib/rool").IssueStatus) => void;
   onCategoryChange?: (issue: Issue, newCategory: string) => void;
 }
@@ -20,6 +21,7 @@ export function SearchPage({
   searchQuery,
   onSearch,
   onSelectIssue,
+  canEdit,
   onStatusChange,
   onCategoryChange,
 }: SearchPageProps) {
@@ -60,6 +62,7 @@ export function SearchPage({
               key={issue.id ?? issue.createdAt}
               issue={issue}
               onClick={() => onSelectIssue(issue)}
+              canEdit={canEdit}
               onStatusChange={onStatusChange}
               onCategoryChange={onCategoryChange}
             />

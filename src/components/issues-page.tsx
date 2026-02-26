@@ -8,11 +8,12 @@ const PAGE_SIZE = 10;
 interface IssuesPageProps {
   issues: Issue[];
   onSelectIssue: (issue: Issue) => void;
+  canEdit?: (issue: Issue) => boolean;
   onStatusChange?: (issue: Issue, newStatus: import("@/lib/rool").IssueStatus) => void;
   onCategoryChange?: (issue: Issue, newCategory: string) => void;
 }
 
-export function IssuesPage({ issues, onSelectIssue, onStatusChange, onCategoryChange }: IssuesPageProps) {
+export function IssuesPage({ issues, onSelectIssue, canEdit, onStatusChange, onCategoryChange }: IssuesPageProps) {
   const [page, setPage] = useState(0);
 
   const totalPages = Math.ceil(issues.length / PAGE_SIZE) || 1;
@@ -31,6 +32,7 @@ export function IssuesPage({ issues, onSelectIssue, onStatusChange, onCategoryCh
               key={issue.id ?? issue.createdAt}
               issue={issue}
               onClick={() => onSelectIssue(issue)}
+              canEdit={canEdit}
               onStatusChange={onStatusChange}
               onCategoryChange={onCategoryChange}
             />

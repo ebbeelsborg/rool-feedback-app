@@ -25,9 +25,19 @@ npm run dev
 
 Sign in with Rool when prompted. Chat about your issue, click **Summarize** when ready, then **Approve & Save**.
 
-## Shared Space (optional)
+## Shared Space (multi-user)
 
-Set `VITE_ROOL_FEEDBACK_SPACE_ID` in `.env` to use a shared space across users.
+To let others view and create issues:
+
+1. **Create a space** in [Rool Console](https://console.rool.dev)
+2. **Set link access** to `editor` so people with the link can access
+3. **Copy the space ID** from the URL and set `VITE_ROOL_FEEDBACK_SPACE_ID` in `.env`
+4. **Rebuild and publish** the app
+
+**Permissions:**
+- Everyone can **read** all issues
+- Everyone can **create** new issues
+- Users can **edit** (status, category) only their own issues
 
 ## License
 

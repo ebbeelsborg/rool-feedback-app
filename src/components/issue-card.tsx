@@ -45,10 +45,11 @@ interface IssueCardProps {
   onClick: () => void;
   onStatusChange?: (issue: Issue, newStatus: IssueStatus) => void;
   onCategoryChange?: (issue: Issue, newCategory: string) => void;
+  canEdit?: (issue: Issue) => boolean;
   className?: string;
 }
 
-export function IssueCard({ issue, onClick, onStatusChange, onCategoryChange, className }: IssueCardProps) {
+export function IssueCard({ issue, onClick, onStatusChange, onCategoryChange, canEdit, className }: IssueCardProps) {
   const status = issue.status ?? "Open";
   const category = issue.category ?? "General";
   const [menuOpen, setMenuOpen] = useState(false);
@@ -64,7 +65,7 @@ export function IssueCard({ issue, onClick, onStatusChange, onCategoryChange, cl
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const canChange = issue.id && (onStatusChange || onCategoryChange);
+  const canChange = issue.id && (onStatusChange || onCategoryChange) && (!canEdit || canEdit(issue));
 
   return (
     <div className={`group relative ${className}`}>

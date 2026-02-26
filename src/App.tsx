@@ -7,6 +7,7 @@ import {
   searchIssues,
   updateIssueStatus,
   updateIssueCategory,
+  canEditIssue,
   type Space,
   type Issue,
   type IssueStatus,
@@ -140,16 +141,16 @@ function App() {
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     <StatusTag status={selectedIssue.status ?? "Open"} />
                     <CategoryTag category={selectedIssue.category ?? "General"} />
-                    {selectedIssue.id && space && (
+                    {selectedIssue.id && space && canEditIssue(space, selectedIssue) && (
                       <IssueStatusMenu
                         issue={selectedIssue}
                         onStatusUpdate={async (newStatus) => {
-                          await updateIssueStatus(space, selectedIssue.id!, newStatus);
+                          await updateIssueStatus(space, selectedIssue.id!, newStatus, selectedIssue);
                           setSelectedIssue({ ...selectedIssue, status: newStatus });
                           refreshIssues();
                         }}
                         onCategoryUpdate={async (newCategory) => {
-                          await updateIssueCategory(space, selectedIssue.id!, newCategory);
+                          await updateIssueCategory(space, selectedIssue.id!, newCategory, selectedIssue);
                           setSelectedIssue({ ...selectedIssue, category: newCategory });
                           refreshIssues();
                         }}
@@ -178,11 +179,12 @@ function App() {
                     <IssuesPage
                       issues={issues}
                       onSelectIssue={(i) => setSelectedIssue(i)}
+                      canEdit={space ? (i) => canEditIssue(space, i) : undefined}
                       onStatusChange={
                         space
                           ? async (issue: Issue, newStatus: IssueStatus) => {
                               if (issue.id) {
-                                await updateIssueStatus(space, issue.id, newStatus);
+                                await updateIssueStatus(space, issue.id, newStatus, issue);
                                 refreshIssues();
                               }
                             }
@@ -192,7 +194,7 @@ function App() {
                         space
                           ? async (issue: Issue, newCategory: string) => {
                               if (issue.id) {
-                                await updateIssueCategory(space, issue.id, newCategory);
+                                await updateIssueCategory(space, issue.id, newCategory, issue);
                                 refreshIssues();
                               }
                             }
@@ -206,11 +208,12 @@ function App() {
                       searchQuery={searchQuery}
                       onSearch={handleSearch}
                       onSelectIssue={(i) => setSelectedIssue(i)}
+                      canEdit={space ? (i) => canEditIssue(space, i) : undefined}
                       onStatusChange={
                         space
                           ? async (issue: Issue, newStatus: IssueStatus) => {
                               if (issue.id) {
-                                await updateIssueStatus(space, issue.id, newStatus);
+                                await updateIssueStatus(space, issue.id, newStatus, issue);
                                 refreshIssues();
                                 handleSearch(searchQuery);
                               }
@@ -221,7 +224,7 @@ function App() {
                         space
                           ? async (issue: Issue, newCategory: string) => {
                               if (issue.id) {
-                                await updateIssueCategory(space, issue.id, newCategory);
+                                await updateIssueCategory(space, issue.id, newCategory, issue);
                                 refreshIssues();
                                 handleSearch(searchQuery);
                               }

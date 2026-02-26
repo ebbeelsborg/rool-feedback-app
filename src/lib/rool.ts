@@ -9,6 +9,7 @@ export interface Issue {
   content: string;
   category?: string;
   status?: IssueStatus;
+  createdBy?: string;
   createdAt: number;
   dateKey: string;
 }
@@ -107,6 +108,7 @@ export async function createIssue(
         content: data.content,
         category: data.category,
         status,
+        createdBy: space.userId,
         createdAt: now,
         dateKey,
       },
@@ -135,11 +137,20 @@ export async function getIssues(space: NonNullable<Space>): Promise<Issue[]> {
   }
 }
 
+export function canEditIssue(space: NonNullable<Space>, issue: Issue): boolean {
+  if (!issue.createdBy) return true;
+  return issue.createdBy === space.userId;
+}
+
 export async function updateIssueStatus(
   space: NonNullable<Space>,
   objectId: string,
-  status: IssueStatus
+  status: IssueStatus,
+  issue?: Issue
 ): Promise<{ success: boolean; error?: string }> {
+  if (issue && !canEditIssue(space, issue)) {
+    return { success: false, error: "You can only edit your own issues" };
+  }
   try {
     await space.updateObject(objectId, { data: { status } });
     return { success: true };
@@ -154,8 +165,12 @@ export async function updateIssueStatus(
 export async function updateIssueCategory(
   space: NonNullable<Space>,
   objectId: string,
-  category: string
+  category: string,
+  issue?: Issue
 ): Promise<{ success: boolean; error?: string }> {
+  if (issue && !canEditIssue(space, issue)) {
+    return { success: false, error: "You can only edit your own issues" };
+  }
   const trimmed = category.trim().split(/\s+/)[0] ?? "General";
   try {
     await space.updateObject(objectId, { data: { category: trimmed } });
