@@ -13,6 +13,9 @@ export interface Issue {
   createdByName?: string;
   createdAt: number;
   dateKey: string;
+  attachments?: string[];
+  isBug?: boolean;
+  issueNumber?: number;
 }
 
 const SPACE_NAME = "Rool Feedback";
@@ -147,7 +150,14 @@ export async function requestSummary(space: NonNullable<Space>): Promise<{
 
 export async function createIssue(
   space: NonNullable<Space>,
-  data: { title: string; content: string; category: string; status?: IssueStatus }
+  data: {
+    title: string;
+    content: string;
+    category: string;
+    status?: IssueStatus;
+    attachments?: string[];
+    isBug?: boolean;
+  }
 ): Promise<{ success: boolean; error?: string }> {
   const now = Date.now();
   const dateKey = new Date(now).toISOString().slice(0, 10);
@@ -163,6 +173,8 @@ export async function createIssue(
     createdByName = auth.name || auth.email?.split("@")[0] || undefined;
   }
 
+  const issueNumber = await getNextIssueNumber(space);
+
   try {
     await space.createObject({
       data: {
@@ -175,6 +187,9 @@ export async function createIssue(
         createdByName,
         createdAt: now,
         dateKey,
+        issueNumber,
+        ...(data.attachments?.length ? { attachments: data.attachments } : {}),
+        ...(data.isBug ? { isBug: true } : {}),
       },
     });
     return { success: true };
@@ -196,6 +211,8 @@ function normalizeToIssue(obj: Record<string, unknown>): Issue {
   const content = (raw.content ?? raw.description ?? "") as string;
   const createdAt = (raw.createdAt as number) ?? 0;
   const id = (raw.id ?? obj.id) as string;
+  const attachments = raw.attachments;
+  const attachmentsArr = Array.isArray(attachments) ? attachments : [];
   return {
     id,
     type: "Issue",
@@ -207,6 +224,9 @@ function normalizeToIssue(obj: Record<string, unknown>): Issue {
     createdByName: (raw.createdByName ?? raw.createdByHandle ?? raw.reportedBy ?? undefined) as string | undefined,
     createdAt,
     dateKey: (raw.dateKey ?? new Date(createdAt).toISOString().slice(0, 10)) as string,
+    attachments: attachmentsArr.length ? (attachmentsArr as string[]) : undefined,
+    isBug: raw.isBug === true,
+    issueNumber: typeof raw.issueNumber === "number" ? raw.issueNumber : undefined,
   };
 }
 
@@ -224,11 +244,48 @@ export async function getIssues(space: NonNullable<Space>): Promise<Issue[]> {
       seen.add(id);
       return true;
     });
-    return deduped
+    const issues = deduped
       .map((o) => normalizeToIssue(o as Record<string, unknown>))
       .sort((a, b) => b.createdAt - a.createdAt);
+    await ensureIssueNumbers(space, issues);
+    return issues;
   } catch {
     return [];
+  }
+}
+
+async function getNextIssueNumber(space: NonNullable<Space>): Promise<number> {
+  const [byLower, byUpper] = await Promise.all([
+    space.findObjects({ where: { type: "issue" }, limit: 500 }),
+    space.findObjects({ where: { type: "Issue" }, limit: 500 }),
+  ]);
+  const objects = [...(byLower.objects ?? []), ...(byUpper.objects ?? [])];
+  const getNum = (o: unknown) => {
+    const raw = (o as { data?: { issueNumber?: number } }).data ?? o;
+    const n = (raw as { issueNumber?: number }).issueNumber;
+    return typeof n === "number" ? n : 0;
+  };
+  const max = objects.length ? Math.max(0, ...objects.map(getNum)) : 0;
+  return max + 1;
+}
+
+/** Assign issue numbers to issues missing them, ordered by createdAt (oldest first). */
+async function ensureIssueNumbers(space: NonNullable<Space>, issues: Issue[]): Promise<void> {
+  const needNumber = issues.filter((i) => i.issueNumber == null && i.id);
+  if (needNumber.length === 0) return;
+  const used = new Set(issues.map((i) => i.issueNumber).filter((n): n is number => typeof n === "number"));
+  const sorted = [...needNumber].sort((a, b) => a.createdAt - b.createdAt);
+  let next = 1;
+  for (const issue of sorted) {
+    while (used.has(next)) next++;
+    try {
+      await space.updateObject(issue.id!, { data: { issueNumber: next } });
+      issue.issueNumber = next;
+      used.add(next);
+      next++;
+    } catch {
+      /* skip on error */
+    }
   }
 }
 
@@ -266,14 +323,36 @@ export async function updateIssueCategory(
   if (issue && !canEditIssue(space, issue)) {
     return { success: false, error: "You can only edit your own issues" };
   }
-  const trimmed = category.trim().split(/\s+/)[0] ?? "General";
   try {
-    await space.updateObject(objectId, { data: { category: trimmed } });
+    await space.updateObject(objectId, { data: { category: category.trim() } });
     return { success: true };
   } catch (err) {
     return {
       success: false,
       error: err instanceof Error ? err.message : "Failed to update",
+    };
+  }
+}
+
+export async function addIssueAttachments(
+  space: NonNullable<Space>,
+  objectId: string,
+  newUrls: string[],
+  issue?: Issue
+): Promise<{ success: boolean; error?: string }> {
+  if (issue && !canEditIssue(space, issue)) {
+    return { success: false, error: "You can only edit your own issues" };
+  }
+  if (newUrls.length === 0) return { success: true };
+  try {
+    const existing = (issue?.attachments ?? []) as string[];
+    const combined = [...existing, ...newUrls];
+    await space.updateObject(objectId, { data: { attachments: combined } });
+    return { success: true };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to add attachments",
     };
   }
 }

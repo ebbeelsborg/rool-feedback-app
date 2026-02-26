@@ -13,6 +13,7 @@ export interface StoredChatState {
     summary: string;
     category: string;
     status: string;
+    isBug?: boolean;
   } | null;
 }
 

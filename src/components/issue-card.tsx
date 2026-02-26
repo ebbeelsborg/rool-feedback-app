@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { type Issue, type IssueStatus } from "@/lib/rool";
 import { formatDate } from "@/lib/format";
-import { MoreVertical, CircleDot, CheckCircle2, XCircle, Tag } from "lucide-react";
+import { MoreVertical, CircleDot, CheckCircle2, XCircle, Tag, Bug } from "lucide-react";
 
 const STATUS_STYLES: Record<IssueStatus, string> = {
   Open: "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-200 dark:border-amber-800/40",
@@ -74,7 +74,15 @@ export function IssueCard({ issue, onClick, onStatusChange, onCategoryChange, ca
         onClick={onClick}
         className="flex h-full w-full flex-col rounded-xl border-2 border-orange-500 bg-white p-4 text-left shadow-sm transition-shadow duration-200 hover:shadow-lg dark:border-orange-500 dark:bg-gray-900"
       >
-        <p className="line-clamp-2 min-h-[2.5rem] max-w-[28ch] font-semibold leading-snug">
+        {issue.issueNumber != null && (
+          <span className="absolute right-3 top-3 text-[11px] text-muted-foreground/80 font-medium tabular-nums">
+            #{issue.issueNumber}
+          </span>
+        )}
+        <p className="line-clamp-2 min-h-[2.5rem] max-w-[28ch] font-semibold leading-snug flex items-start gap-1.5 pr-8">
+          {(issue.isBug || issue.category === "Bug") && (
+            <Bug className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" aria-label="Bug" />
+          )}
           {truncate(issue.title || "Untitled", 50)}
         </p>
         <p className="mt-1.5 flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">

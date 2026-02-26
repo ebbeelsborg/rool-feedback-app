@@ -7,6 +7,7 @@ import {
   searchIssuesInMemory,
   updateIssueStatus,
   updateIssueCategory,
+  addIssueAttachments,
   canEditIssue,
   type Space,
   type Issue,
@@ -18,8 +19,10 @@ import { Chat } from "@/components/chat";
 import { SidebarNav, type Section } from "@/components/sidebar-nav";
 import { IssuesPage } from "@/components/issues-page";
 import { SearchPage } from "@/components/search-page";
-import { Heart, Loader2, MessageSquare, FolderOpen, Search, ArrowLeft } from "lucide-react";
+import { Heart, Loader2, MessageSquare, FolderOpen, Search, ArrowLeft, Bug } from "lucide-react";
 import { StatusTag, CategoryTag } from "@/components/issue-card";
+import { AttachmentImage } from "@/components/attachment-image";
+import { IssueAttachmentUpload } from "@/components/issue-attachment-upload";
 import { IssueStatusMenu } from "@/components/issue-status-menu";
 
 function App() {
@@ -260,7 +263,12 @@ function App() {
                 {displayIssue && (
                   <div className="absolute inset-0 z-20 flex flex-col overflow-y-auto bg-card">
                     <div className="p-6">
-                      <h1 className="text-xl font-bold">{displayIssue.title ?? "Issue"}</h1>
+                      <h1 className="text-xl font-bold flex items-center gap-2">
+                        {(displayIssue.isBug || displayIssue.category === "Bug") && (
+                          <Bug className="h-5 w-5 text-amber-600 shrink-0" aria-label="Bug" />
+                        )}
+                        {displayIssue.title ?? "Issue"}
+                      </h1>
                       {(() => {
                         const { summary, body } = parseIssueContent(displayIssue.content);
                         return (
@@ -302,6 +310,25 @@ function App() {
                                 />
                               )}
                             </div>
+                            {(displayIssue.attachments?.length ?? 0) > 0 && space && (
+                              <div className="mt-4 flex flex-wrap gap-3">
+                                {displayIssue.attachments!.map((url) => (
+                                  <AttachmentImage
+                                    key={url}
+                                    space={space}
+                                    url={url}
+                                    className="max-h-48 rounded-lg border border-border object-contain"
+                                  />
+                                ))}
+                              </div>
+                            )}
+                            {displayIssue.id && space && canEditIssue(space, displayIssue) && (
+                              <IssueAttachmentUpload
+                                issue={displayIssue}
+                                space={space}
+                                onAdded={refreshIssues}
+                              />
+                            )}
                             <pre className="mt-6 whitespace-pre-wrap rounded-xl border border-border bg-muted/30 p-5 text-sm leading-relaxed">
                               {body || (displayIssue.id ? "Loading..." : "")}
                             </pre>

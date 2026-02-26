@@ -13,7 +13,8 @@ import {
 import { loadChatState, saveChatState, clearChatState } from "@/lib/chat-storage";
 import { StatusTag, CategoryTag } from "@/components/issue-card";
 import { ChatContent } from "@/components/chat-content";
-import { Loader2, Send, FileCheck, Check, Bot, User } from "lucide-react";
+import { AttachmentImage } from "@/components/attachment-image";
+import { Loader2, Send, FileCheck, Check, Bot, User, Paperclip, Bug } from "lucide-react";
 
 export interface Message {
   role: "user" | "assistant";
@@ -37,10 +38,18 @@ export function Chat({ space, issues, onIssueSaved }: ChatProps) {
   });
   const [sending, setSending] = useState(false);
   const [summarizing, setSummarizing] = useState(false);
-  const [summary, setSummary] = useState<{ title: string; summary: string; category: string; status: IssueStatus } | null>(() => {
+  const [summary, setSummary] = useState<{
+    title: string;
+    summary: string;
+    category: string;
+    status: IssueStatus;
+    isBug?: boolean;
+  } | null>(() => {
     const stored = loadChatState();
     return stored?.summary ?? null;
   });
+  const [attachments, setAttachments] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [approving, setApproving] = useState(false);
   const [editingSummary, setEditingSummary] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -98,6 +107,29 @@ export function Chat({ space, issues, onIssueSaved }: ChatProps) {
     }
   }
 
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files?.length || !space) return;
+    setUploading(true);
+    try {
+      const urls: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (!file.type.startsWith("image/")) continue;
+        const url = await space.uploadMedia(file);
+        urls.push(url);
+      }
+      setAttachments((a) => [...a, ...urls]);
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  }
+
+  function removeAttachment(url: string) {
+    setAttachments((a) => a.filter((u) => u !== url));
+  }
+
   async function handleApprove() {
     if (!space || !summary) return;
 
@@ -112,11 +144,14 @@ export function Chat({ space, issues, onIssueSaved }: ChatProps) {
         content: content + `\n\n---\nSummary: ${summary.summary}`,
         category: summary.category,
         status: summary.status,
+        attachments: attachments.length ? attachments : undefined,
+        isBug: summary.isBug,
       });
       if (result.success) {
         setMessages([]);
         setInput("");
         setSummary(null);
+        setAttachments([]);
         clearChatState();
         onIssueSaved();
       }
@@ -129,6 +164,7 @@ export function Chat({ space, issues, onIssueSaved }: ChatProps) {
     setMessages([]);
     setInput("");
     setSummary(null);
+    setAttachments([]);
     setEditingSummary(false);
     clearChatState();
   }
@@ -209,9 +245,9 @@ export function Chat({ space, issues, onIssueSaved }: ChatProps) {
                       <label className="text-xs font-medium text-muted-foreground block">Category</label>
                       <Input
                         value={summary.category}
-                        onChange={(e) => setSummary((s) => s && { ...s, category: e.target.value.trim().split(/\s+/)[0] || "General" })}
+                        onChange={(e) => setSummary((s) => s && { ...s, category: e.target.value })}
                         className="rounded-lg w-32"
-                        placeholder="General"
+                        placeholder="Category"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -225,6 +261,19 @@ export function Chat({ space, issues, onIssueSaved }: ChatProps) {
                         <option value="Solved">Solved</option>
                         <option value="Rejected">Rejected</option>
                       </select>
+                    </div>
+                    <div className="flex items-center gap-2 pt-4">
+                      <input
+                        type="checkbox"
+                        id="summary-is-bug"
+                        checked={summary.isBug ?? false}
+                        onChange={(e) => setSummary((s) => s && { ...s, isBug: e.target.checked })}
+                        className="h-4 w-4 rounded border-input"
+                      />
+                      <label htmlFor="summary-is-bug" className="flex items-center gap-1.5 text-sm cursor-pointer">
+                        <Bug className="h-4 w-4" />
+                        This is a bug
+                      </label>
                     </div>
                   </div>
                   <div className="flex gap-2 pt-1">
@@ -240,9 +289,10 @@ export function Chat({ space, issues, onIssueSaved }: ChatProps) {
               ) : (
                 <>
                   <p className="text-base font-semibold text-foreground">{summary.title}</p>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-1.5 items-center">
                     <StatusTag status={summary.status} />
                     <CategoryTag category={summary.category} />
+                    {summary.isBug && <Bug className="h-4 w-4 text-amber-600" aria-label="Bug" />}
                   </div>
                   <p className="text-sm leading-relaxed text-muted-foreground">{summary.summary}</p>
                   <div className="flex gap-2 pt-1">
@@ -265,6 +315,23 @@ export function Chat({ space, issues, onIssueSaved }: ChatProps) {
 
       <div className="shrink-0 border-t border-border bg-card/50 p-4">
         <form ref={formRef} onSubmit={handleSend} className="flex flex-col gap-3">
+          {(attachments.length > 0 || summary) && (
+            <div className="flex flex-wrap gap-2">
+              {attachments.map((url) => (
+                <div key={url} className="relative group">
+                  <AttachmentImage space={space!} url={url} className="h-20 w-20 rounded-lg border object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removeAttachment(url)}
+                    className="absolute -top-1 -right-1 rounded-full bg-destructive text-destructive-foreground p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                    aria-label="Remove"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           <Textarea
             placeholder="Describe your issue..."
             value={input}
@@ -281,7 +348,21 @@ export function Chat({ space, issues, onIssueSaved }: ChatProps) {
             className="min-h-[80px] resize-none rounded-xl border-2 border-orange-500 bg-background focus-visible:border-orange-500 focus-visible:ring-orange-500/20"
             disabled={sending || summarizing}
           />
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleFileSelect}
+                disabled={sending || summarizing || uploading}
+                className="hidden"
+              />
+              <span className="inline-flex items-center gap-1.5 rounded-xl border border-input bg-background px-3 py-2 text-sm hover:bg-muted">
+                {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+                {uploading ? "Uploading..." : "Add screenshot"}
+              </span>
+            </label>
             <Button type="submit" disabled={!input.trim() || sending || summarizing} className="rounded-xl">
               {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               Send
