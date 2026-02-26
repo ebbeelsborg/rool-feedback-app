@@ -29,16 +29,8 @@ npm run dev
 
 Sign in with Rool when prompted. Chat about your issue, click **Summarize** when ready, then **Approve & Save**.
 
-## Shared Space (multi-user)
+## Permissions
 
-To let others view and create issues in the same space:
-
-1. **Create a space** (e.g. "Rool Feedback") in [Rool Console](https://console.rool.dev)
-2. **Set link access** to `editor` so people with the link can access
-3. **Copy the space ID** from the URL and set `VITE_ROOL_FEEDBACK_SPACE_ID` in `.env`
-4. **Rebuild and publish**: `npm run build && rool app publish rool-feedback-app ./dist`
-
-**Permissions:**
 - Everyone can **read** all issues
 - Everyone can **create** new issues
 - Users can **edit** (status, category) only their own issues
