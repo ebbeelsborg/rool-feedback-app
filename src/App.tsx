@@ -4,7 +4,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import {
   ensureSpace,
   getIssues,
-  searchIssues,
+  searchIssuesInMemory,
   updateIssueStatus,
   updateIssueCategory,
   canEditIssue,
@@ -25,7 +25,10 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [issues, setIssues] = useState<Issue[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Issue[]>([]);
+  const searchResults =
+    searchQuery.trim() === ""
+      ? []
+      : searchIssuesInMemory(issues, searchQuery);
   const [section, setSection] = useState<Section>("chat");
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
 
@@ -72,13 +75,8 @@ function App() {
     setIssues(list);
   }
 
-  async function handleSearch(query: string) {
+  function handleSearch(query: string) {
     setSearchQuery(query);
-    if (!space) return;
-    const list = query.trim()
-      ? await searchIssues(space, query)
-      : [];
-    setSearchResults(list);
   }
 
   return (
@@ -215,7 +213,6 @@ function App() {
                               if (issue.id) {
                                 await updateIssueStatus(space, issue.id, newStatus, issue);
                                 refreshIssues();
-                                handleSearch(searchQuery);
                               }
                             }
                           : undefined
@@ -226,7 +223,6 @@ function App() {
                               if (issue.id) {
                                 await updateIssueCategory(space, issue.id, newCategory, issue);
                                 refreshIssues();
-                                handleSearch(searchQuery);
                               }
                             }
                           : undefined

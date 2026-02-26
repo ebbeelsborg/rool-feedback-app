@@ -183,23 +183,26 @@ export async function updateIssueCategory(
   }
 }
 
-export async function searchIssues(
-  space: NonNullable<Space>,
-  query: string
-): Promise<Issue[]> {
-  if (!query.trim()) return getIssues(space);
+/** Client-side search over issues in memory. Instant, no backend calls. */
+export function searchIssuesInMemory(issues: Issue[], query: string): Issue[] {
+  const q = query.trim();
+  if (!q) return [];
 
-  try {
-    const { objects } = await space.findObjects({
-      where: { type: "issue" },
-      prompt: query.trim(),
-      limit: 50,
-    });
+  const words = q
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((w) => w.length > 0);
 
-    return (objects as unknown as Issue[])
-      .filter((d) => d?.type === "issue")
-      .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
-  } catch {
-    return getIssues(space);
-  }
+  return issues
+    .filter((issue) => {
+      const text = [
+        issue.title ?? "",
+        issue.content ?? "",
+        issue.category ?? "",
+      ]
+        .join(" ")
+        .toLowerCase();
+      return words.every((w) => text.includes(w));
+    })
+    .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
 }
