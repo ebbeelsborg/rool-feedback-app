@@ -1,4 +1,6 @@
-# Rool Issues
+# Rool ❤️ Feedback
+
+**→ [Try the app](https://use.rool.app/rool-feedback-app/)**
 
 A chat-based issue tracker built on the [Rool SDK](https://docs.rool.dev/). Describe your issue in a conversation with the AI. When the LLM understands it, generate a summary and save it. Issues are stored in your Rool Space and browsable in a sidebar organized by date.
 
@@ -7,8 +9,10 @@ A chat-based issue tracker built on the [Rool SDK](https://docs.rool.dev/). Desc
 - **Chat interface**: User messages in orange, AI responses in black/gray
 - **Summarize flow**: Click Summarize when done explaining; AI generates title + summary
 - **Approve & save**: Store issues with full conversation + summary
-- **Sidebar**: Date folders (S3-style) with issue objects; expand folders, click to view
-- **Search**: Search across issues
+- **Clear**: Reset the chat to start a new issue
+- **Issues list**: Date folders with issue cards; click to view details
+- **Search**: Instant in-memory search across issues
+- **Hash routing**: Shareable links (e.g. `#/issues/abc123`)
 
 ## Tech Stack
 
@@ -27,12 +31,12 @@ Sign in with Rool when prompted. Chat about your issue, click **Summarize** when
 
 ## Shared Space (multi-user)
 
-To let others view and create issues:
+To let others view and create issues in the same space:
 
-1. **Create a space** in [Rool Console](https://console.rool.dev)
+1. **Create a space** (e.g. "Rool Feedback") in [Rool Console](https://console.rool.dev)
 2. **Set link access** to `editor` so people with the link can access
 3. **Copy the space ID** from the URL and set `VITE_ROOL_FEEDBACK_SPACE_ID` in `.env`
-4. **Rebuild and publish** the app
+4. **Rebuild and publish**: `npm run build && rool app publish rool-feedback-app ./dist`
 
 **Permissions:**
 - Everyone can **read** all issues
