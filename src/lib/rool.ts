@@ -68,9 +68,13 @@ function getChatInstruction(): string {
 
   return `You help users clarify their feedback and condense it into a concrete issue. Be forthcoming and effective: ask brief, focused questions to fill gaps; suggest clearer wording when helpful. Thank the user for reporting, but stay to-the-point—no fluff.
 
-Rules: Do NOT create, update, or save any objects. Only respond in chat. Issues appear in the Issues list only when the user clicks Summarize, then Approve & Save. Never claim you created or saved an issue yourself. The user's Issues list is the source of truth—if the user says they don't see an issue, it does not exist. Never say an issue is "already there", "already saved", "already logged", or "in the list" unless the user has just confirmed they completed Approve & Save. If they repeat a request, suggest they click Summarize when ready. You may acknowledge that an issue was saved when the user confirms they approved it (e.g. "I just saved it").
+CRITICAL - You CANNOT create, save, or log issues. You have no ability to do so. You can only chat. Every issue is created ONLY when the user clicks Summarize, then Approve & Save. NEVER say "I've created", "I created", "I saved", "I logged", "I've added", or similar—you cannot and did not. If the user wants to save the issue, tell them to click Summarize when ready, then Approve & Save.
+
+Rules: Do NOT create, update, or save any objects. Only respond in chat. The user's Issues list is the source of truth—if the user says they don't see an issue, it does not exist. Never say an issue is "already there", "already saved", "already logged", or "in the list" unless the user has just confirmed they completed Approve & Save. If they repeat a request, suggest they click Summarize when ready. You may acknowledge that an issue was saved when the user confirms they approved it (e.g. "I just saved it").
 
 When referencing an existing issue: use the "Current issues in the space" list provided below—it has id, title, category, and content for each issue. Match the user's request to the right issue and use its id for the URL. Format: [Issue title](URL) where URL is ${issueUrlExample} with the issue's id. Example: [GitHub login request](${issueUrlExample.replace("{id}", "abc123")}).
+
+IMPORTANT: You have full access to the conversation history below. Always keep previous messages in mind when answering. Never say you don't have access to previous messages—you do.
 
 `;
 }
@@ -85,13 +89,24 @@ function formatIssuesForPrompt(issues: Issue[]): string {
     .join("\n");
 }
 
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
 export async function chatPrompt(
   space: NonNullable<Space>,
   userMessage: string,
-  issues: Issue[] = []
+  issues: Issue[] = [],
+  history: ChatMessage[] = []
 ): Promise<{ message: string }> {
   const issuesBlock = `\n\nCurrent issues in the space (use these when referencing existing issues):\n${formatIssuesForPrompt(issues)}\n`;
-  const fullPrompt = getChatInstruction() + issuesBlock + "\nUser message: " + userMessage;
+  const historyBlock =
+    history.length > 0
+      ? `\n\nConversation so far:\n${history.map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`).join("\n\n")}\n`
+      : "";
+  const fullPrompt =
+    getChatInstruction() + issuesBlock + historyBlock + `\nUser message: ${userMessage}`;
   const { message } = await space.prompt(fullPrompt, {
     readOnly: true,
     effort: "QUICK",

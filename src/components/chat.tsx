@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   chatPrompt,
@@ -41,6 +42,7 @@ export function Chat({ space, issues, onIssueSaved }: ChatProps) {
     return stored?.summary ?? null;
   });
   const [approving, setApproving] = useState(false);
+  const [editingSummary, setEditingSummary] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -62,7 +64,7 @@ export function Chat({ space, issues, onIssueSaved }: ChatProps) {
     setSending(true);
 
     try {
-      const { message } = await chatPrompt(space!, text, issues);
+      const { message } = await chatPrompt(space!, text, issues, messages);
       setMessages((m) => [...m, { role: "assistant", content: message }]);
     } catch (err) {
       setMessages((m) => [
@@ -83,6 +85,7 @@ export function Chat({ space, issues, onIssueSaved }: ChatProps) {
     try {
       const result = await requestSummary(space);
       setSummary(result);
+      setEditingSummary(false);
     } catch (err) {
       setSummary({
         title: "Untitled",
@@ -126,6 +129,7 @@ export function Chat({ space, issues, onIssueSaved }: ChatProps) {
     setMessages([]);
     setInput("");
     setSummary(null);
+    setEditingSummary(false);
     clearChatState();
   }
 
@@ -180,29 +184,78 @@ export function Chat({ space, issues, onIssueSaved }: ChatProps) {
           {summary && (
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 space-y-3">
               <p className="text-xs font-semibold uppercase tracking-wider text-primary">Summary for approval</p>
-              <p className="text-base font-semibold text-foreground">{summary.title}</p>
-              <div className="flex flex-wrap gap-1.5">
-                <StatusTag status={summary.status} />
-                <CategoryTag category={summary.category} />
-              </div>
-              <p className="text-sm leading-relaxed text-muted-foreground">{summary.summary}</p>
-              <div className="flex gap-2 pt-1">
-                <Button
-                  size="sm"
-                  onClick={handleApprove}
-                  disabled={approving}
-                >
-                  {approving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                  Approve & Save
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setSummary(null)}
-                >
-                  Edit more
-                </Button>
-              </div>
+              {editingSummary ? (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground">Title</label>
+                    <Input
+                      value={summary.title}
+                      onChange={(e) => setSummary((s) => s && { ...s, title: e.target.value.slice(0, 50) })}
+                      className="rounded-lg"
+                      maxLength={50}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground">Summary</label>
+                    <Textarea
+                      value={summary.summary}
+                      onChange={(e) => setSummary((s) => s && { ...s, summary: e.target.value })}
+                      className="min-h-[80px] rounded-lg resize-none"
+                      rows={3}
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-muted-foreground block">Category</label>
+                      <Input
+                        value={summary.category}
+                        onChange={(e) => setSummary((s) => s && { ...s, category: e.target.value.trim().split(/\s+/)[0] || "General" })}
+                        className="rounded-lg w-32"
+                        placeholder="General"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-muted-foreground block">Status</label>
+                      <select
+                        value={summary.status}
+                        onChange={(e) => setSummary((s) => s && { ...s, status: e.target.value as IssueStatus })}
+                        className="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+                      >
+                        <option value="Open">Open</option>
+                        <option value="Solved">Solved</option>
+                        <option value="Rejected">Rejected</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <Button size="sm" onClick={handleApprove} disabled={approving}>
+                      {approving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                      Approve & Save
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setEditingSummary(false)}>
+                      Done
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-base font-semibold text-foreground">{summary.title}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    <StatusTag status={summary.status} />
+                    <CategoryTag category={summary.category} />
+                  </div>
+                  <p className="text-sm leading-relaxed text-muted-foreground">{summary.summary}</p>
+                  <div className="flex gap-2 pt-1">
+                    <Button size="sm" onClick={handleApprove} disabled={approving}>
+                      {approving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                      Approve & Save
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setEditingSummary(true)}>
+                      Edit
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
