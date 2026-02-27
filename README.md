@@ -22,7 +22,7 @@ A chat-based issue tracker built on the [Rool SDK](https://docs.rool.dev/). Desc
 
 ## Shared Space
 
-The app uses a shared Rool Space for all users:
+The app uses a shared Rool Space for all users (with **editor** permissions):
 - **Name**: Rool Feedback
 - **ID**: `vYI49S`
 
