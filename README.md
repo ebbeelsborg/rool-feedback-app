@@ -6,19 +6,24 @@ A chat-based issue tracker built on the [Rool SDK](https://docs.rool.dev/). Desc
 
 ## Features
 
-- **Chat interface**: User messages in orange, AI responses in black/gray
-- **Summarize flow**: Click Summarize when done explaining; AI generates title + summary
-- **Approve & save**: Store issues with full conversation + summary
-- **Clear**: Reset the chat to start a new issue
-- **Issues list**: Date folders with issue cards; click to view details
-- **Search**: Instant in-memory search across issues
-- **Hash routing**: Shareable links (e.g. `#/issues/abc123`)
+- **AI Chat interface**: Orange user messages and black/gray responses for a clear dialogue.
+- **Smart Summarization**: Automatically extracts title, summary, category, and bug status from conversations.
+- **Issue Tracking**:
+    - **Categorization**: Grouped by Bug, Feature, UX, or General.
+    - **Status Management**: Track progress via Open, Solved, or Rejected states.
+    - **Screenshots**: Upload and view multiple image attachments per issue.
+    - **Sequential Numbers**: Every issue gets a unique reference number.
+- **Discovery**:
+    - **Sidebar Nav**: Issues organized by date folders (e.g. Recent, February 2026).
+    - **Instant Search**: Blazing fast in-memory search across all titles and summaries.
+- **Infrastructure**:
+    - **Persistent State**: Chat sessions survive page refreshes.
+    - **Hash Routing**: Shareable links for direct access to specific issues.
 
 ## Tech Stack
 
 - React, Vite, Tailwind CSS
 - Rool SDK (Rool Spaces)
-- Gemini via Rool token quota
 
 ## Shared Space
 
