@@ -20,7 +20,7 @@ export interface Issue {
 
 const SPACE_NAME = "Rool Feedback";
 
-const SHARED_SPACE_ID = import.meta.env.VITE_ROOL_FEEDBACK_SPACE_ID as string | undefined;
+const SHARED_SPACE_ID = "vYI49S";
 
 let client: RoolClient | null = null;
 
@@ -44,7 +44,7 @@ export async function ensureSpace() {
     const space = await rool.openSpace(SHARED_SPACE_ID.trim());
     // Ensure anyone with the app link can access the space
     if (space && space.linkAccess !== "editor") {
-      await space.setLinkAccess("editor").catch(() => {});
+      await space.setLinkAccess("editor").catch(() => { });
     }
     return space;
   }

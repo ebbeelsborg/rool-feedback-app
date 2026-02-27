@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 
 export default defineConfig({
-  base: "/rool-feedback-app/",
+  base: "/",
   plugins: [react()],
   server: {
     host: "0.0.0.0",

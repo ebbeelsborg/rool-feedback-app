@@ -1,5 +1,5 @@
 {
-  "name": "rool-feedback-app",
+  "name": "rool-feedback",
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "check": "tsc --noEmit",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "publish": "npm run build && npx @rool-dev/cli app publish rool-feedback ./dist"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.0",

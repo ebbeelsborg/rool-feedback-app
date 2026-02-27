@@ -1,6 +1,6 @@
 # Rool ❤️ Feedback
 
-**→ [Try the app](https://use.rool.app/rool-feedback-app/)**
+**→ [Try the app](https://rool-feedback.rool.app/)**
 
 A chat-based issue tracker built on the [Rool SDK](https://docs.rool.dev/). Describe your issue in a conversation with the AI. When the LLM understands it, generate a summary and save it. Issues are stored in your Rool Space and browsable in a sidebar organized by date.
 
