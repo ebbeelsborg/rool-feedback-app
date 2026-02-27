@@ -6,20 +6,43 @@ const fs = require("fs");
 const path = require("path");
 const dir = path.join(__dirname, "../dist/assets");
 
-const legacy = [
-  ["index.js", "index-B_rwgBJR.js"],
-  ["index.css", "index-BD3U6wCH.css"],
-  ["index.js", "index-k9AX46oR.js"],
-  ["index.js", "index-k9AX460R.js"],
-  ["index.js", "index-BguAxMGL.js"],  // From Step 426
-  ["index.css", "index-DtiyZExr.css"], // From Step 426
-  ["index.js", "index-D9UTSra9.js"],  // From Step 531
-  ["index.css", "index-ezVMZviE.css"], // From Step 531
+// Automatically find the current built files
+const files = fs.readdirSync(dir);
+const currentJs = files.find(f => f.startsWith("index-") && f.endsWith(".js"));
+const currentCss = files.find(f => f.startsWith("index-") && f.endsWith(".css"));
+
+console.log(`Current JS: ${currentJs}`);
+console.log(`Current CSS: ${currentCss}`);
+
+const legacyJs = [
+  "index-B_rwgBJR.js",
+  "index-k9AX46oR.js",
+  "index-k9AX460R.js",
+  "index-BguAxMGL.js",
+  "index-D9UTSra9.js",
+  "index-BzsZuzFu.js", // From Step 828
+  "index-CVYxUthX.js", // From Step 904
 ];
 
-for (const [src, dest] of legacy) {
-  const srcPath = path.join(dir, src);
-  if (fs.existsSync(srcPath)) {
-    fs.copyFileSync(srcPath, path.join(dir, dest));
+const legacyCss = [
+  "index-BD3U6wCH.css",
+  "index-DtiyZExr.css",
+  "index-ezVMZviE.css",
+  "index-B285skHp.css", // From Step 904
+];
+
+if (currentJs) {
+  for (const dest of legacyJs) {
+    if (dest === currentJs) continue;
+    fs.copyFileSync(path.join(dir, currentJs), path.join(dir, dest));
+    console.log(`  Map: ${currentJs} -> ${dest}`);
+  }
+}
+
+if (currentCss) {
+  for (const dest of legacyCss) {
+    if (dest === currentCss) continue;
+    fs.copyFileSync(path.join(dir, currentCss), path.join(dir, dest));
+    console.log(`  Map: ${currentCss} -> ${dest}`);
   }
 }
