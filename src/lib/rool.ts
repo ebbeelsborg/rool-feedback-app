@@ -221,7 +221,7 @@ function normalizeToIssue(obj: Record<string, unknown>): Issue {
     category: (raw.category ?? "General") as string,
     status,
     createdBy: raw.createdBy as string | undefined,
-    createdByName: (raw.createdByName ?? raw.createdByHandle ?? raw.reportedBy ?? undefined) as string | undefined,
+    createdByName: (raw.createdByName ?? raw.createdByHandle ?? undefined) as string | undefined,
     createdAt,
     dateKey: (raw.dateKey ?? new Date(createdAt).toISOString().slice(0, 10)) as string,
     attachments: attachmentsArr.length ? (attachmentsArr as string[]) : undefined,
