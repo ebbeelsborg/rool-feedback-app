@@ -87,8 +87,13 @@ export function IssueCard({ issue, onClick, onStatusChange, onCategoryChange, ca
         </p>
         <p className="mt-1.5 flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
           {issue.createdByName && (
-            <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 font-medium text-foreground">
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-muted px-1.5 py-0.5 font-medium text-foreground">
               {issue.createdByName.replace(/^@+/, "")}
+              {issue.createdBy && (
+                <span className="text-[10px] text-muted-foreground/60 font-normal">
+                  ({issue.createdBy})
+                </span>
+              )}
             </span>
           )}
           {formatDate(issue.createdAt)}
