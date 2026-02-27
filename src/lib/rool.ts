@@ -289,8 +289,8 @@ async function ensureIssueNumbers(space: NonNullable<Space>, issues: Issue[]): P
   }
 }
 
-export function canEditIssue(space: NonNullable<Space>, issue: Issue): boolean {
-  if (!issue.createdBy) return true;
+export function canEditIssue(space: NonNullable<Space>, issue: Issue | null): boolean {
+  if (!issue || !issue.createdBy) return false;
   return issue.createdBy === space.userId;
 }
 
