@@ -34,7 +34,7 @@ export function IssueAttachmentUpload({ issue, space, onAdded }: IssueAttachment
   }
 
   return (
-    <label className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-sm text-muted-foreground hover:bg-muted/50">
+    <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-sm text-muted-foreground hover:bg-muted/50">
       <input
         type="file"
         accept="image/*"

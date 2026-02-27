@@ -8,9 +8,11 @@ import { toast } from "sonner";
 interface CommentSectionProps {
   space: NonNullable<Space>;
   issueId: string;
+  hideButton?: boolean;
+  onPostRef?: React.MutableRefObject<(() => Promise<void>) | null>;
 }
 
-export function CommentSection({ space, issueId }: CommentSectionProps) {
+export function CommentSection({ space, issueId, hideButton, onPostRef }: CommentSectionProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -51,6 +53,12 @@ export function CommentSection({ space, issueId }: CommentSectionProps) {
       setIsSubmitting(false);
     }
   }
+
+  useEffect(() => {
+    if (onPostRef) {
+      onPostRef.current = handleSubmit;
+    }
+  }, [onPostRef, handleSubmit]);
 
   function formatTimestamp(ts: number) {
     const date = new Date(ts);
@@ -119,21 +127,23 @@ export function CommentSection({ space, issueId }: CommentSectionProps) {
           onChange={(e) => setNewComment(e.target.value)}
           className="min-h-[100px] resize-none bg-background/50 focus-visible:ring-primary/20"
         />
-        <div className="flex justify-end">
-          <Button
-            onClick={handleSubmit}
-            disabled={isSubmitting || !newComment.trim()}
-            size="sm"
-            className="gap-1.5"
-          >
-            {isSubmitting ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Send className="w-3.5 h-3.5" />
-            )}
-            Post Comment
-          </Button>
-        </div>
+        {!hideButton && (
+          <div className="flex justify-end">
+            <Button
+              onClick={handleSubmit}
+              disabled={isSubmitting || !newComment.trim()}
+              size="sm"
+              className="gap-1.5"
+            >
+              {isSubmitting ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Send className="w-3.5 h-3.5" />
+              )}
+              Post Comment
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

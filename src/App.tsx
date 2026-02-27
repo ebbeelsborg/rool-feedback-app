@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -37,6 +37,7 @@ function App() {
       : searchIssuesInMemory(issues, searchQuery);
   const [section, setSection] = useState<Section>("chat");
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
+  const commentSubmitRef = useRef<(() => Promise<void>) | null>(null);
 
   useEffect(() => {
     const { section: urlSection, issueId } = parseUrl();
@@ -320,19 +321,36 @@ function App() {
                                 ))}
                               </div>
                             )}
-                            {displayIssue.id && space && canEditIssue(space, displayIssue) && (
-                              <IssueAttachmentUpload
-                                issue={displayIssue}
-                                space={space}
-                                onAdded={refreshIssues}
-                              />
-                            )}
                             <pre className="mt-6 whitespace-pre-wrap rounded-xl border border-border bg-muted/30 p-5 text-sm leading-relaxed">
                               {body || (displayIssue.id ? "Loading..." : "")}
                             </pre>
 
                             {displayIssue.id && space && (
-                              <CommentSection space={space} issueId={displayIssue.id} />
+                              <div className="mt-6 flex flex-col gap-4">
+                                <CommentSection
+                                  space={space}
+                                  issueId={displayIssue.id}
+                                  hideButton
+                                  onPostRef={commentSubmitRef}
+                                />
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => commentSubmitRef.current?.()}
+                                    className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                                  >
+                                    <MessageSquare className="h-4 w-4" />
+                                    Post Comment
+                                  </button>
+
+                                  {canEditIssue(space, displayIssue) && (
+                                    <IssueAttachmentUpload
+                                      issue={displayIssue}
+                                      space={space}
+                                      onAdded={refreshIssues}
+                                    />
+                                  )}
+                                </div>
+                              </div>
                             )}
                           </>
                         );
