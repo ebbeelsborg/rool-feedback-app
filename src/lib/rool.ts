@@ -1,22 +1,26 @@
 import { RoolClient } from "@rool-dev/sdk";
+import { z } from "zod";
 
-export type IssueStatus = "Open" | "Solved" | "Rejected";
+export const IssueStatusSchema = z.enum(["Open", "Solved", "Rejected"]);
+export type IssueStatus = z.infer<typeof IssueStatusSchema>;
 
-export interface Issue {
-  id?: string;
-  type: "Issue";
-  title: string;
-  content: string;
-  category?: string;
-  status?: IssueStatus;
-  createdBy?: string;
-  createdByName?: string;
-  createdAt: number;
-  dateKey: string;
-  attachments?: string[];
-  isBug?: boolean;
-  issueNumber?: number;
-}
+export const IssueSchema = z.object({
+  id: z.string().optional(),
+  type: z.literal("Issue"),
+  title: z.string().min(1),
+  content: z.string(),
+  category: z.string().default("General"),
+  status: IssueStatusSchema.default("Open"),
+  createdBy: z.string().optional(),
+  createdByName: z.string().optional(),
+  createdAt: z.number(),
+  dateKey: z.string(),
+  attachments: z.array(z.string()).optional(),
+  isBug: z.boolean().optional(),
+  issueNumber: z.number().optional(),
+});
+
+export type Issue = z.infer<typeof IssueSchema>;
 
 const SPACE_NAME = "Rool Feedback";
 
@@ -202,32 +206,32 @@ export async function createIssue(
 }
 
 function normalizeToIssue(obj: Record<string, unknown>): Issue {
-  // Support both flat objects and nested data (RoolObjectEntry)
   const raw = (obj.data as Record<string, unknown>) ?? obj;
-  const status =
-    raw.status === "Solved" || raw.status === "Rejected"
-      ? (raw.status as IssueStatus)
-      : "Open";
-  const content = (raw.content ?? raw.description ?? "") as string;
-  const createdAt = (raw.createdAt as number) ?? 0;
-  const id = (raw.id ?? obj.id) as string;
-  const attachments = raw.attachments;
-  const attachmentsArr = Array.isArray(attachments) ? attachments : [];
-  return {
-    id,
+
+  // 1. Initial manual normalization for legacy fields (before Zod parsing)
+  const transformed = {
+    ...raw,
+    id: (raw.id ?? obj.id) as string,
     type: "Issue",
     title: (raw.title ?? "Untitled") as string,
-    content,
+    content: (raw.content ?? raw.description ?? "") as string,
     category: (raw.category ?? "General") as string,
-    status,
-    createdBy: raw.createdBy as string | undefined,
-    createdByName: (raw.createdByName ?? raw.createdByHandle ?? undefined) as string | undefined,
-    createdAt,
-    dateKey: (raw.dateKey ?? new Date(createdAt).toISOString().slice(0, 10)) as string,
-    attachments: attachmentsArr.length ? (attachmentsArr as string[]) : undefined,
-    isBug: raw.isBug === true,
-    issueNumber: typeof raw.issueNumber === "number" ? raw.issueNumber : undefined,
+    status: (raw.status === "Solved" || raw.status === "Rejected" ? raw.status : "Open"),
+    createdAt: (raw.createdAt as number) ?? Date.now(),
+    dateKey: (raw.dateKey ?? new Date((raw.createdAt as number) ?? Date.now()).toISOString().slice(0, 10)) as string,
   };
+
+  // 2. Strict Zod parsing
+  const result = IssueSchema.safeParse(transformed);
+
+  if (!result.success) {
+    console.warn(`[Rool] Issue validation failed for ${transformed.id}:`, result.error.format());
+    // We return the transformed object anyway to prevent app crashing, 
+    // but the app now knows it's "dirty" if we ever want to check.
+    return transformed as Issue;
+  }
+
+  return result.data;
 }
 
 export async function getIssues(space: NonNullable<Space>): Promise<Issue[]> {
