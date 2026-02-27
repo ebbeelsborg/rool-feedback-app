@@ -1,3 +1,5 @@
+import { type IssueStatus } from "./rool";
+
 /**
  * Persists chat state to sessionStorage so it survives unmounts, navigation, and refreshes.
  * Cleared only when the user explicitly approves and saves an issue.
@@ -12,7 +14,7 @@ export interface StoredChatState {
     title: string;
     summary: string;
     category: string;
-    status: string;
+    status: IssueStatus;
     isBug?: boolean;
   } | null;
 }

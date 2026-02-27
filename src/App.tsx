@@ -7,7 +7,6 @@ import {
   searchIssuesInMemory,
   updateIssueStatus,
   updateIssueCategory,
-  addIssueAttachments,
   canEditIssue,
   type Space,
   type Issue,
@@ -190,76 +189,73 @@ function App() {
               </header>
               <div className="relative flex-1 overflow-hidden">
                 <div
-                  className={`absolute inset-0 flex flex-col ${
-                    !displayIssue && section === "chat" ? "z-10" : "pointer-events-none invisible"
-                  }`}
+                  className={`absolute inset-0 flex flex-col ${!displayIssue && section === "chat" ? "z-10" : "pointer-events-none invisible"
+                    }`}
                 >
                   <Chat space={space} issues={issues} onIssueSaved={refreshIssues} />
                 </div>
                 <div
-                  className={`absolute inset-0 overflow-hidden ${
-                    !displayIssue && section === "issues" ? "z-10" : "pointer-events-none invisible"
-                  }`}
-                >
-                    <IssuesPage
-                      issues={issues}
-                      onSelectIssue={(i) => setSelectedIssue(i)}
-                      canEdit={space ? (i) => canEditIssue(space, i) : undefined}
-                      onStatusChange={
-                        space
-                          ? async (issue: Issue, newStatus: IssueStatus) => {
-                              if (issue.id) {
-                                await updateIssueStatus(space, issue.id, newStatus, issue);
-                                refreshIssues();
-                              }
-                            }
-                          : undefined
-                      }
-                      onCategoryChange={
-                        space
-                          ? async (issue: Issue, newCategory: string) => {
-                              if (issue.id) {
-                                await updateIssueCategory(space, issue.id, newCategory, issue);
-                                refreshIssues();
-                              }
-                            }
-                          : undefined
-                      }
-                    />
-                  </div>
-                  <div
-                    className={`absolute inset-0 overflow-hidden ${
-                      !displayIssue && section === "search" ? "z-10" : "pointer-events-none invisible"
+                  className={`absolute inset-0 overflow-hidden ${!displayIssue && section === "issues" ? "z-10" : "pointer-events-none invisible"
                     }`}
-                  >
-                    <SearchPage
-                      issues={searchResults}
-                      searchQuery={searchQuery}
-                      onSearch={handleSearch}
-                      onSelectIssue={(i) => setSelectedIssue(i)}
-                      canEdit={space ? (i) => canEditIssue(space, i) : undefined}
-                      onStatusChange={
-                        space
-                          ? async (issue: Issue, newStatus: IssueStatus) => {
-                              if (issue.id) {
-                                await updateIssueStatus(space, issue.id, newStatus, issue);
-                                refreshIssues();
-                              }
-                            }
-                          : undefined
-                      }
-                      onCategoryChange={
-                        space
-                          ? async (issue: Issue, newCategory: string) => {
-                              if (issue.id) {
-                                await updateIssueCategory(space, issue.id, newCategory, issue);
-                                refreshIssues();
-                              }
-                            }
-                          : undefined
-                      }
-                    />
-                  </div>
+                >
+                  <IssuesPage
+                    issues={issues}
+                    onSelectIssue={(i) => setSelectedIssue(i)}
+                    canEdit={space ? (i) => canEditIssue(space, i) : undefined}
+                    onStatusChange={
+                      space
+                        ? async (issue: Issue, newStatus: IssueStatus) => {
+                          if (issue.id) {
+                            await updateIssueStatus(space, issue.id, newStatus, issue);
+                            refreshIssues();
+                          }
+                        }
+                        : undefined
+                    }
+                    onCategoryChange={
+                      space
+                        ? async (issue: Issue, newCategory: string) => {
+                          if (issue.id) {
+                            await updateIssueCategory(space, issue.id, newCategory, issue);
+                            refreshIssues();
+                          }
+                        }
+                        : undefined
+                    }
+                  />
+                </div>
+                <div
+                  className={`absolute inset-0 overflow-hidden ${!displayIssue && section === "search" ? "z-10" : "pointer-events-none invisible"
+                    }`}
+                >
+                  <SearchPage
+                    issues={searchResults}
+                    searchQuery={searchQuery}
+                    onSearch={handleSearch}
+                    onSelectIssue={(i) => setSelectedIssue(i)}
+                    canEdit={space ? (i) => canEditIssue(space, i) : undefined}
+                    onStatusChange={
+                      space
+                        ? async (issue: Issue, newStatus: IssueStatus) => {
+                          if (issue.id) {
+                            await updateIssueStatus(space, issue.id, newStatus, issue);
+                            refreshIssues();
+                          }
+                        }
+                        : undefined
+                    }
+                    onCategoryChange={
+                      space
+                        ? async (issue: Issue, newCategory: string) => {
+                          if (issue.id) {
+                            await updateIssueCategory(space, issue.id, newCategory, issue);
+                            refreshIssues();
+                          }
+                        }
+                        : undefined
+                    }
+                  />
+                </div>
                 {displayIssue && (
                   <div className="absolute inset-0 z-20 flex flex-col overflow-y-auto bg-card">
                     <div className="p-6">
@@ -338,7 +334,7 @@ function App() {
                     </div>
                   </div>
                 )}
-                </div>
+              </div>
             </div>
           </main>
         </div>

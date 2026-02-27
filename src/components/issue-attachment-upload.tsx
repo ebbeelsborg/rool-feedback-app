@@ -13,7 +13,7 @@ export function IssueAttachmentUpload({ issue, space, onAdded }: IssueAttachment
 
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
-    if (!files?.length || !issue.id) return;
+    if (!files?.length || !issue.id || !space) return;
     setUploading(true);
     try {
       const urls: string[] = [];

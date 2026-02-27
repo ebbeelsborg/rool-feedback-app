@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import type { Space } from "@/lib/rool";
+import { type Space } from "@/lib/rool";
+import { Loader2, FileWarning } from "lucide-react";
 
 interface AttachmentImageProps {
   space: Space;
@@ -10,10 +11,18 @@ interface AttachmentImageProps {
 export function AttachmentImage({ space, url, className }: AttachmentImageProps) {
   const [src, setSrc] = useState<string | null>(null);
   const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let revoked = false;
     let objectUrl: string | null = null;
+
+    if (!space) {
+      setLoading(false);
+      setError(true);
+      return;
+    }
+
     space
       .fetchMedia(url)
       .then((res) => {
@@ -27,7 +36,8 @@ export function AttachmentImage({ space, url, className }: AttachmentImageProps)
         objectUrl = URL.createObjectURL(blob);
         setSrc(objectUrl);
       })
-      .catch(() => setError(true));
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
 
     return () => {
       revoked = true;
@@ -35,7 +45,21 @@ export function AttachmentImage({ space, url, className }: AttachmentImageProps)
     };
   }, [space, url]);
 
-  if (error) return <span className="text-xs text-muted-foreground">[attachment]</span>;
-  if (!src) return <div className={`animate-pulse bg-muted ${className ?? "h-24 w-24 rounded-lg"}`} />;
-  return <img src={src} alt="Attachment" className={className ?? "max-h-48 rounded-lg border border-border object-contain"} />;
+  if (loading) {
+    return (
+      <div className={`flex items-center justify-center bg-muted/30 ${className}`}>
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error || !src) {
+    return (
+      <div className={`flex items-center justify-center bg-muted/30 text-muted-foreground ${className}`}>
+        <FileWarning className="h-5 w-5" />
+      </div>
+    );
+  }
+
+  return <img src={src} alt="Attachment" className={className} />;
 }
