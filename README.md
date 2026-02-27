@@ -20,6 +20,12 @@ A chat-based issue tracker built on the [Rool SDK](https://docs.rool.dev/). Desc
 - Rool SDK (Rool Spaces)
 - Gemini via Rool token quota
 
+## Shared Space
+
+The app uses a shared Rool Space for all users:
+- **Name**: Rool Feedback
+- **ID**: `vYI49S`
+
 ## Getting Started
 
 ```bash
