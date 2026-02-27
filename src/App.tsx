@@ -23,6 +23,8 @@ import { StatusTag, CategoryTag } from "@/components/issue-card";
 import { AttachmentImage } from "@/components/attachment-image";
 import { IssueAttachmentUpload } from "@/components/issue-attachment-upload";
 import { IssueStatusMenu } from "@/components/issue-status-menu";
+import { CommentSection } from "@/components/comment-section";
+import { Toaster } from "sonner";
 
 function App() {
   const [space, setSpace] = useState<Space>(null);
@@ -328,6 +330,10 @@ function App() {
                             <pre className="mt-6 whitespace-pre-wrap rounded-xl border border-border bg-muted/30 p-5 text-sm leading-relaxed">
                               {body || (displayIssue.id ? "Loading..." : "")}
                             </pre>
+
+                            {displayIssue.id && space && (
+                              <CommentSection space={space} issueId={displayIssue.id} />
+                            )}
                           </>
                         );
                       })()}
@@ -337,6 +343,7 @@ function App() {
               </div>
             </div>
           </main>
+          <Toaster position="bottom-right" />
         </div>
       )}
     </ThemeProvider>

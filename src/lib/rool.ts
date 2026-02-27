@@ -22,6 +22,18 @@ export const IssueSchema = z.object({
 
 export type Issue = z.infer<typeof IssueSchema>;
 
+export const CommentSchema = z.object({
+  id: z.string().optional(),
+  type: z.literal("Comment"),
+  issueId: z.string(),
+  content: z.string().min(1),
+  createdBy: z.string().optional(),
+  createdByName: z.string().optional(),
+  createdAt: z.number(),
+});
+
+export type Comment = z.infer<typeof CommentSchema>;
+
 const SPACE_NAME = "Rool Feedback";
 
 const SHARED_SPACE_ID = "vYI49S";
@@ -383,4 +395,66 @@ export function searchIssuesInMemory(issues: Issue[], query: string): Issue[] {
       return words.every((w) => text.includes(w));
     })
     .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+}
+
+export async function addComment(
+  space: NonNullable<Space>,
+  issueId: string,
+  content: string
+): Promise<{ success: boolean; error?: string }> {
+  let createdByName: string | undefined;
+  try {
+    const user = await getRoolClient().getCurrentUser();
+    createdByName = user.name || user.slug || user.email?.split("@")[0] || undefined;
+  } catch {
+    const auth = getRoolClient().getAuthUser();
+    createdByName = auth.name || auth.email?.split("@")[0] || undefined;
+  }
+
+  try {
+    await space.createObject({
+      data: {
+        type: "Comment",
+        issueId,
+        content,
+        createdBy: space.userId,
+        createdByName,
+        createdAt: Date.now(),
+      },
+    });
+    return { success: true };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to save comment",
+    };
+  }
+}
+
+export async function getComments(
+  space: NonNullable<Space>,
+  issueId: string
+): Promise<Comment[]> {
+  try {
+    const { objects } = await space.findObjects({
+      where: {
+        type: "Comment",
+        issueId,
+      },
+      limit: 100,
+    });
+
+    return (objects ?? [])
+      .map((obj) => {
+        const raw = (obj.data as Record<string, unknown>) ?? obj;
+        return {
+          ...raw,
+          id: (raw.id ?? obj.id) as string,
+          type: "Comment",
+        } as Comment;
+      })
+      .sort((a, b) => a.createdAt - b.createdAt);
+  } catch {
+    return [];
+  }
 }
