@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  ensureSpace,
+  ensureChannel,
   getIssues,
   searchIssuesInMemory,
   updateIssueStatus,
@@ -27,7 +27,7 @@ import { CommentSection } from "@/components/comment-section";
 import { Toaster } from "sonner";
 
 function App() {
-  const [space, setSpace] = useState<Space>(null);
+  const [space, setSpace] = useState<Space | null>(null);
   const [loading, setLoading] = useState(true);
   const [issues, setIssues] = useState<Issue[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -69,7 +69,7 @@ function App() {
     let cancelled = false;
 
     async function init() {
-      const s = await ensureSpace();
+      const s = await ensureChannel();
       if (cancelled) return;
 
       if (s) {

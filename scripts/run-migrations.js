@@ -14,14 +14,14 @@ async function runMigrations() {
   });
   await client.initialize();
 
-  const space = await client.openSpace(SHARED_SPACE_ID);
-  if (!space) {
-    console.error(`Could not open space ${SHARED_SPACE_ID}`);
+  const channel = await client.openChannel(SHARED_SPACE_ID, "main");
+  if (!channel) {
+    console.error(`Could not open channel on space ${SHARED_SPACE_ID}`);
     return;
   }
 
   // 1. Get current schema version
-  const { objects } = await space.findObjects({ where: { type: "SchemaInfo" } });
+  const { objects } = await channel.findObjects({ where: { type: "SchemaInfo" } });
   let schemaInfo = objects?.[0];
   let currentVersion = schemaInfo?.data?.version ?? 0;
 
@@ -41,15 +41,15 @@ async function runMigrations() {
       const migration = await import(path.join(MIGRATIONS_DIR, file));
 
       try {
-        await migration.up(space);
+        await migration.up(channel);
 
         // Update version with retry
         const updateVersion = async () => {
           if (schemaInfo) {
-            await space.updateObject(schemaInfo.id, { data: { version } });
+            await channel.updateObject(schemaInfo.id, { data: { version } });
           } else {
-            const res = await space.createObject({ data: { type: "SchemaInfo", version } });
-            schemaInfo = { id: res.id };
+            const res = await channel.createObject({ data: { type: "SchemaInfo", version } });
+            schemaInfo = { id: res.object?.id ?? res.id };
           }
         };
 

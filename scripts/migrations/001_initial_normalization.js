@@ -1,11 +1,12 @@
 /**
  * Migration 001: Initial Normalization
  * Ensures every issue has type: "Issue" and basic valid fields.
+ * @param {import('@rool-dev/sdk').RoolChannel} channel
  */
-export async function up(space) {
+export async function up(channel) {
   const [res1, res2] = await Promise.all([
-    space.findObjects({ where: { type: "issue" }, limit: 500 }),
-    space.findObjects({ where: { type: "Issue" }, limit: 500 })
+    channel.findObjects({ where: { type: "issue" }, limit: 500 }),
+    channel.findObjects({ where: { type: "Issue" }, limit: 500 })
   ]);
 
   const issues = [...(res1.objects || []), ...(res2.objects || [])];
@@ -24,13 +25,13 @@ export async function up(space) {
     };
 
     try {
-      await space.updateObject(obj.id, { data: normalized });
+      await channel.updateObject(obj.id, { data: normalized });
       console.log(`  Normalized ${obj.id}`);
     } catch (err) {
-      if (err.message.includes("429")) {
+      if (err.message?.includes("429")) {
         console.warn(`  Rate limited. Waiting 30s...`);
         await new Promise(r => setTimeout(r, 30000));
-        await space.updateObject(obj.id, { data: normalized });
+        await channel.updateObject(obj.id, { data: normalized });
         console.log(`  Normalized ${obj.id} (after retry)`);
       } else {
         throw err;

@@ -1,4 +1,5 @@
 import { RoolClient } from "@rool-dev/sdk";
+import type { RoolChannel } from "@rool-dev/sdk";
 import { z } from "zod";
 
 export const IssueStatusSchema = z.enum(["Open", "Solved", "Rejected"]);
@@ -35,7 +36,7 @@ export const CommentSchema = z.object({
 export type Comment = z.infer<typeof CommentSchema>;
 
 const SPACE_NAME = "Rool Feedback";
-
+const CHANNEL_ID = "main";
 const SHARED_SPACE_ID = "vYI49S";
 
 let client: RoolClient | null = null;
@@ -47,7 +48,37 @@ export function getRoolClient(): RoolClient {
   return client;
 }
 
-export async function ensureSpace() {
+async function ensureCollections(channel: RoolChannel): Promise<void> {
+  const schema = channel.getSchema();
+  if (!schema.Issue) {
+    await channel.createCollection("Issue", [
+      { name: "type", type: { kind: "string" } },
+      { name: "title", type: { kind: "string" } },
+      { name: "content", type: { kind: "string" } },
+      { name: "category", type: { kind: "string" } },
+      { name: "status", type: { kind: "enum", values: ["Open", "Solved", "Rejected"] } },
+      { name: "createdBy", type: { kind: "maybe", inner: { kind: "string" } } },
+      { name: "createdByName", type: { kind: "maybe", inner: { kind: "string" } } },
+      { name: "createdAt", type: { kind: "number" } },
+      { name: "dateKey", type: { kind: "string" } },
+      { name: "attachments", type: { kind: "maybe", inner: { kind: "array", inner: { kind: "string" } } } },
+      { name: "isBug", type: { kind: "maybe", inner: { kind: "boolean" } } },
+      { name: "issueNumber", type: { kind: "maybe", inner: { kind: "number" } } },
+    ]).catch(() => {});
+  }
+  if (!schema.Comment) {
+    await channel.createCollection("Comment", [
+      { name: "type", type: { kind: "string" } },
+      { name: "issueId", type: { kind: "string" } },
+      { name: "content", type: { kind: "string" } },
+      { name: "createdBy", type: { kind: "maybe", inner: { kind: "string" } } },
+      { name: "createdByName", type: { kind: "maybe", inner: { kind: "string" } } },
+      { name: "createdAt", type: { kind: "number" } },
+    ]).catch(() => {});
+  }
+}
+
+export async function ensureChannel(): Promise<RoolChannel | null> {
   const rool = getRoolClient();
   const authenticated = await rool.initialize();
 
@@ -56,34 +87,40 @@ export async function ensureSpace() {
     return null;
   }
 
+  let spaceId: string;
+
   if (SHARED_SPACE_ID?.trim()) {
     const space = await rool.openSpace(SHARED_SPACE_ID.trim());
-    // Ensure anyone with the app link can access the space
-    if (space && space.linkAccess !== "editor") {
-      await space.setLinkAccess("editor").catch(() => { });
+    if (space.linkAccess !== "editor") {
+      await space.setLinkAccess("editor").catch(() => {});
     }
-    return space;
+    spaceId = space.id;
+  } else {
+    const spaces = await rool.listSpaces();
+    const existing = spaces.find((s: { name: string }) => s.name === SPACE_NAME);
+    if (existing) {
+      spaceId = existing.id;
+    } else {
+      const space = await rool.createSpace(SPACE_NAME);
+      spaceId = space.id;
+    }
   }
 
-  const spaces = await rool.listSpaces();
-  const existing = spaces.find((s: { name: string }) => s.name === SPACE_NAME);
-
-  if (existing) {
-    return rool.openSpace(existing.id);
-  }
-
-  return rool.createSpace(SPACE_NAME);
+  const channel = await rool.openChannel(spaceId, CHANNEL_ID);
+  await ensureCollections(channel);
+  return channel;
 }
 
-export type Space = Awaited<ReturnType<typeof ensureSpace>>;
+/** Alias for backward compatibility. */
+export type Space = RoolChannel;
 
 function getChatInstruction(): string {
-  const base = import.meta.env.BASE_URL ?? "/rool-feedback-app/";
-  const basePath = base.endsWith("/") ? base.slice(0, -1) : base;
+  const base = import.meta.env.BASE_URL ?? "/";
+  const basePath = (base === "." || base === "./" ? "" : base.endsWith("/") ? base.slice(0, -1) : base) || "";
   const issueUrlExample =
     typeof window !== "undefined"
-      ? `${window.location.origin}${basePath}/#/issues/{id}`
-      : `https://use.rool.app${basePath}/#/issues/{id}`;
+      ? `${window.location.origin}${basePath ? basePath + "/" : ""}#/issues/{id}`
+      : `https://use.rool.app${basePath ? basePath + "/" : ""}#/issues/{id}`;
 
   return `You help users clarify their feedback and condense it into a concrete issue. Be forthcoming and effective: ask brief, focused questions to fill gaps; suggest clearer wording when helpful. Thank the user for reporting, but stay to-the-point—no fluff.
 
@@ -114,7 +151,7 @@ export interface ChatMessage {
 }
 
 export async function chatPrompt(
-  space: NonNullable<Space>,
+  channel: RoolChannel,
   userMessage: string,
   issues: Issue[] = [],
   history: ChatMessage[] = []
@@ -126,7 +163,7 @@ export async function chatPrompt(
       : "";
   const fullPrompt =
     getChatInstruction() + issuesBlock + historyBlock + `\nUser message: ${userMessage}`;
-  const { message } = await space.prompt(fullPrompt, {
+  const { message } = await channel.prompt(fullPrompt, {
     readOnly: true,
     effort: "QUICK",
   });
@@ -135,13 +172,13 @@ export async function chatPrompt(
 
 const MAX_TITLE_LENGTH = 50;
 
-export async function requestSummary(space: NonNullable<Space>): Promise<{
+export async function requestSummary(channel: RoolChannel): Promise<{
   title: string;
   summary: string;
   category: string;
   status: IssueStatus;
 }> {
-  const { message } = await space.prompt(
+  const { message } = await channel.prompt(
     "Based on our conversation, provide: a short title (max 50 characters), a 2-3 sentence summary, a category (one word, e.g. Bug, Feature, UX), and a status (exactly one of: Open, Solved, Rejected). New issues are usually Open. When writing the summary, refer to the reporter as 'The user' (e.g. 'The user is...') not 'Users' (e.g. 'Users are...'). Reply in this exact JSON format only, no other text: {\"title\": \"...\", \"summary\": \"...\", \"category\": \"...\", \"status\": \"Open\"}"
   );
   const raw = message.trim();
@@ -165,7 +202,7 @@ export async function requestSummary(space: NonNullable<Space>): Promise<{
 }
 
 export async function createIssue(
-  space: NonNullable<Space>,
+  channel: RoolChannel,
   data: {
     title: string;
     content: string;
@@ -189,17 +226,17 @@ export async function createIssue(
     createdByName = auth.name || auth.email?.split("@")[0] || undefined;
   }
 
-  const issueNumber = await getNextIssueNumber(space);
+  const issueNumber = await getNextIssueNumber(channel);
 
   try {
-    await space.createObject({
+    await channel.createObject({
       data: {
         type: "Issue",
         title,
         content: data.content,
         category: data.category,
         status,
-        createdBy: space.userId,
+        createdBy: channel.userId,
         createdByName,
         createdAt: now,
         dateKey,
@@ -220,7 +257,6 @@ export async function createIssue(
 function normalizeToIssue(obj: Record<string, unknown>): Issue {
   const raw = (obj.data as Record<string, unknown>) ?? obj;
 
-  // 1. Initial manual normalization for legacy fields (before Zod parsing)
   const transformed = {
     ...raw,
     id: (raw.id ?? obj.id) as string,
@@ -233,24 +269,21 @@ function normalizeToIssue(obj: Record<string, unknown>): Issue {
     dateKey: (raw.dateKey ?? new Date((raw.createdAt as number) ?? Date.now()).toISOString().slice(0, 10)) as string,
   };
 
-  // 2. Strict Zod parsing
   const result = IssueSchema.safeParse(transformed);
 
   if (!result.success) {
     console.warn(`[Rool] Issue validation failed for ${transformed.id}:`, result.error.format());
-    // We return the transformed object anyway to prevent app crashing, 
-    // but the app now knows it's "dirty" if we ever want to check.
     return transformed as Issue;
   }
 
   return result.data;
 }
 
-export async function getIssues(space: NonNullable<Space>): Promise<Issue[]> {
+export async function getIssues(channel: RoolChannel): Promise<Issue[]> {
   try {
     const [byLower, byUpper] = await Promise.all([
-      space.findObjects({ where: { type: "issue" }, limit: 200 }),
-      space.findObjects({ where: { type: "Issue" }, limit: 200 }),
+      channel.findObjects({ where: { type: "issue" }, limit: 200 }),
+      channel.findObjects({ where: { type: "Issue" }, limit: 200 }),
     ]);
     const objects = [...(byLower.objects ?? []), ...(byUpper.objects ?? [])];
     const seen = new Set<string>();
@@ -263,17 +296,17 @@ export async function getIssues(space: NonNullable<Space>): Promise<Issue[]> {
     const issues = deduped
       .map((o) => normalizeToIssue(o as Record<string, unknown>))
       .sort((a, b) => b.createdAt - a.createdAt);
-    await ensureIssueNumbers(space, issues);
+    await ensureIssueNumbers(channel, issues);
     return issues;
   } catch {
     return [];
   }
 }
 
-async function getNextIssueNumber(space: NonNullable<Space>): Promise<number> {
+async function getNextIssueNumber(channel: RoolChannel): Promise<number> {
   const [byLower, byUpper] = await Promise.all([
-    space.findObjects({ where: { type: "issue" }, limit: 500 }),
-    space.findObjects({ where: { type: "Issue" }, limit: 500 }),
+    channel.findObjects({ where: { type: "issue" }, limit: 500 }),
+    channel.findObjects({ where: { type: "Issue" }, limit: 500 }),
   ]);
   const objects = [...(byLower.objects ?? []), ...(byUpper.objects ?? [])];
   const getNum = (o: unknown) => {
@@ -285,8 +318,7 @@ async function getNextIssueNumber(space: NonNullable<Space>): Promise<number> {
   return max + 1;
 }
 
-/** Assign issue numbers to issues missing them, ordered by createdAt (oldest first). */
-async function ensureIssueNumbers(space: NonNullable<Space>, issues: Issue[]): Promise<void> {
+async function ensureIssueNumbers(channel: RoolChannel, issues: Issue[]): Promise<void> {
   const needNumber = issues.filter((i) => i.issueNumber == null && i.id);
   if (needNumber.length === 0) return;
   const used = new Set(issues.map((i) => i.issueNumber).filter((n): n is number => typeof n === "number"));
@@ -295,7 +327,7 @@ async function ensureIssueNumbers(space: NonNullable<Space>, issues: Issue[]): P
   for (const issue of sorted) {
     while (used.has(next)) next++;
     try {
-      await space.updateObject(issue.id!, { data: { issueNumber: next } });
+      await channel.updateObject(issue.id!, { data: { issueNumber: next } });
       issue.issueNumber = next;
       used.add(next);
       next++;
@@ -305,22 +337,22 @@ async function ensureIssueNumbers(space: NonNullable<Space>, issues: Issue[]): P
   }
 }
 
-export function canEditIssue(space: NonNullable<Space>, issue: Issue | null): boolean {
+export function canEditIssue(channel: RoolChannel, issue: Issue | null): boolean {
   if (!issue || !issue.createdBy) return false;
-  return issue.createdBy === space.userId;
+  return issue.createdBy === channel.userId;
 }
 
 export async function updateIssueStatus(
-  space: NonNullable<Space>,
+  channel: RoolChannel,
   objectId: string,
   status: IssueStatus,
   issue?: Issue
 ): Promise<{ success: boolean; error?: string }> {
-  if (issue && !canEditIssue(space, issue)) {
+  if (issue && !canEditIssue(channel, issue)) {
     return { success: false, error: "You can only edit your own issues" };
   }
   try {
-    await space.updateObject(objectId, { data: { status } });
+    await channel.updateObject(objectId, { data: { status } });
     return { success: true };
   } catch (err) {
     return {
@@ -331,16 +363,16 @@ export async function updateIssueStatus(
 }
 
 export async function updateIssueCategory(
-  space: NonNullable<Space>,
+  channel: RoolChannel,
   objectId: string,
   category: string,
   issue?: Issue
 ): Promise<{ success: boolean; error?: string }> {
-  if (issue && !canEditIssue(space, issue)) {
+  if (issue && !canEditIssue(channel, issue)) {
     return { success: false, error: "You can only edit your own issues" };
   }
   try {
-    await space.updateObject(objectId, { data: { category: category.trim() } });
+    await channel.updateObject(objectId, { data: { category: category.trim() } });
     return { success: true };
   } catch (err) {
     return {
@@ -351,19 +383,19 @@ export async function updateIssueCategory(
 }
 
 export async function addIssueAttachments(
-  space: NonNullable<Space>,
+  channel: RoolChannel,
   objectId: string,
   newUrls: string[],
   issue?: Issue
 ): Promise<{ success: boolean; error?: string }> {
-  if (issue && !canEditIssue(space, issue)) {
+  if (issue && !canEditIssue(channel, issue)) {
     return { success: false, error: "You can only edit your own issues" };
   }
   if (newUrls.length === 0) return { success: true };
   try {
     const existing = (issue?.attachments ?? []) as string[];
     const combined = [...existing, ...newUrls];
-    await space.updateObject(objectId, { data: { attachments: combined } });
+    await channel.updateObject(objectId, { data: { attachments: combined } });
     return { success: true };
   } catch (err) {
     return {
@@ -398,7 +430,7 @@ export function searchIssuesInMemory(issues: Issue[], query: string): Issue[] {
 }
 
 export async function addComment(
-  space: NonNullable<Space>,
+  channel: RoolChannel,
   issueId: string,
   content: string
 ): Promise<{ success: boolean; error?: string }> {
@@ -412,12 +444,12 @@ export async function addComment(
   }
 
   try {
-    await space.createObject({
+    await channel.createObject({
       data: {
         type: "Comment",
         issueId,
         content,
-        createdBy: space.userId,
+        createdBy: channel.userId,
         createdByName,
         createdAt: Date.now(),
       },
@@ -432,11 +464,11 @@ export async function addComment(
 }
 
 export async function getComments(
-  space: NonNullable<Space>,
+  channel: RoolChannel,
   issueId: string
 ): Promise<Comment[]> {
   try {
-    const { objects } = await space.findObjects({
+    const { objects } = await channel.findObjects({
       where: {
         type: "Comment",
         issueId,
